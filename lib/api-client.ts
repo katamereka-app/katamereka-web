@@ -17,6 +17,9 @@ export const API_BASE_URL =
   process.env.API_URL ||
   "https://api.katamereka.id";
 
+export const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "https://katamereka.id";
+
 export interface BusinessQueryParams {
   search?: string;
   city?: string;
@@ -36,6 +39,8 @@ export interface ApiBusinessListItem {
   category: string;
   rating: string | number;
   reviews_count: number;
+  status?: string;
+  updated_at?: string;
 }
 
 export interface ApiPagination {
@@ -200,6 +205,36 @@ export async function fetchBusinesses(
       total_pages,
     },
   };
+}
+
+/**
+ * Fetches every public business listing by paging through GET /businesses,
+ * for use by the sitemap generator. Returns [] on any API failure so the
+ * sitemap can still render with just static routes.
+ */
+export async function fetchAllBusinessesForSitemap(): Promise<
+  ApiBusinessListItem[]
+> {
+  const PUBLIC_STATUSES = new Set(["ACTIVE", "CLAIMED"]);
+  const PAGE_LIMIT = 200;
+  const all: ApiBusinessListItem[] = [];
+
+  try {
+    let page = 1;
+    let totalPages = 1;
+
+    do {
+      const res = await fetchBusinesses({ page, limit: PAGE_LIMIT });
+      all.push(...res.data);
+      totalPages = res.pagination.total_pages || 1;
+      page += 1;
+    } while (page <= totalPages);
+  } catch (e) {
+    console.warn("fetchAllBusinessesForSitemap failed:", e);
+    return [];
+  }
+
+  return all.filter((b) => !b.status || PUBLIC_STATUSES.has(b.status));
 }
 
 /**
