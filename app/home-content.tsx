@@ -25,8 +25,7 @@ import {
   Store,
   ArrowUp,
   ArrowUpRight,
-  ShieldCheck,
-  AppWindow
+  ShieldCheck
 } from "lucide-react";
 
 import Navbar from "@/components/navbar";
@@ -541,7 +540,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
             
             {/* Brand Info */}
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-6 space-y-4">
               <Link href="/" className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#008767] flex items-center justify-center text-white">
                   <MessageSquare className="w-4 h-4 fill-white/20" />
@@ -607,30 +606,6 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 <li><Link href="#" className="hover:text-[#008767] transition-colors">Syarat & Ketentuan</Link></li>
                 <li><Link href="#" className="hover:text-[#008767] transition-colors">Hubungi Kami</Link></li>
               </ul>
-            </div>
-
-            {/* Links Column 4: Download Aplikasi */}
-            <div className="lg:col-span-2 space-y-3">
-              <h4 className="font-bold text-slate-900 text-sm">Download Aplikasi</h4>
-              <p className="text-xs text-slate-500">
-                Nikmati pengalaman lebih baik di perangkatmu.
-              </p>
-              <div className="space-y-2 pt-1">
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 cursor-pointer hover:bg-slate-800 transition-colors">
-                  <AppWindow className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[10px] text-slate-300 leading-none">Download on the</p>
-                    <p className="text-xs font-semibold leading-tight mt-0.5">App Store</p>
-                  </div>
-                </div>
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 cursor-pointer hover:bg-slate-800 transition-colors">
-                  <Smartphone className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[10px] text-slate-300 leading-none">GET IT ON</p>
-                    <p className="text-xs font-semibold leading-tight mt-0.5">Google Play</p>
-                  </div>
-                </div>
-              </div>
             </div>
 
           </div>

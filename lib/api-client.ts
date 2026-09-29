@@ -549,6 +549,226 @@ export async function loginUserApi(payload: {
 }
 
 /**
+ * 6. Business Claim endpoints (POST /businesses/:id/claim, GET .../claim-status,
+ *    GET /my-business-claims, and the /admin/business-claims moderation queue)
+ */
+
+function getAuthToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("accessToken");
+  } catch (e) {
+    return null;
+  }
+}
+
+function authHeaders(): HeadersInit {
+  const token = getAuthToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+export type BusinessClaimStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type VerificationMethod = "DOCUMENT" | "WEBSITE" | "EMAIL" | "PHONE" | "OTHER";
+
+export interface CreateBusinessClaimPayload {
+  verification_method?: VerificationMethod;
+  proof_url?: string;
+  verification_data?: Record<string, unknown>;
+  message?: string;
+}
+
+export interface ApiCreateClaimResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    id: string;
+    business_id: string;
+    status: BusinessClaimStatus;
+    created_at: string;
+  };
+}
+
+export interface ApiClaimStatusResponse {
+  status: BusinessClaimStatus | null;
+}
+
+export interface ApiMyBusinessClaim {
+  id: string;
+  business: { id: string; name: string; slug: string } | null;
+  status: BusinessClaimStatus;
+  verification_method: VerificationMethod | string | null;
+  proof_url: string | null;
+  message: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ApiAdminBusinessClaim {
+  id: string;
+  business: { id?: string; name?: string; slug?: string; is_claimed?: boolean };
+  user: { id?: string; name?: string; email?: string };
+  status: BusinessClaimStatus;
+  verification_method: VerificationMethod | string | null;
+  proof_url: string | null;
+  message: string | null;
+  admin_notes: string | null;
+  reviewed_by: { id: string; name: string } | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface ApiAdminBusinessClaimDetail extends ApiAdminBusinessClaim {
+  verification_data: Record<string, unknown> | null;
+  updated_at: string;
+}
+
+export interface ApiAdminBusinessClaimsResponse {
+  data: ApiAdminBusinessClaim[];
+  pagination: ApiPagination;
+}
+
+/**
+ * POST /businesses/:businessId/claim (requires auth)
+ */
+export async function createBusinessClaim(
+  businessId: string,
+  payload: CreateBusinessClaimPayload = {}
+): Promise<ApiCreateClaimResponse> {
+  const url = `${API_BASE_URL}/businesses/${encodeURIComponent(businessId)}/claim`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    return {
+      success: false,
+      message: data.message || "Gagal mengirim klaim bisnis",
+    };
+  }
+  return data;
+}
+
+/**
+ * GET /businesses/:businessId/claim-status (requires auth)
+ */
+export async function fetchClaimStatus(
+  businessId: string
+): Promise<ApiClaimStatusResponse> {
+  const url = `${API_BASE_URL}/businesses/${encodeURIComponent(businessId)}/claim-status`;
+
+  try {
+    const res = await fetch(url, { method: "GET", headers: authHeaders() });
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn("fetchClaimStatus failed:", e);
+  }
+  return { status: null };
+}
+
+/**
+ * GET /my-business-claims (requires auth)
+ */
+export async function fetchMyBusinessClaims(): Promise<ApiMyBusinessClaim[]> {
+  const url = `${API_BASE_URL}/my-business-claims`;
+
+  try {
+    const res = await fetch(url, { method: "GET", headers: authHeaders() });
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn("fetchMyBusinessClaims failed:", e);
+  }
+  return [];
+}
+
+/**
+ * GET /admin/business-claims (requires SUPER_ADMIN auth)
+ */
+export async function fetchAdminBusinessClaims(
+  params: { status?: BusinessClaimStatus; search?: string; page?: number; limit?: number } = {}
+): Promise<ApiAdminBusinessClaimsResponse> {
+  const query = new URLSearchParams();
+  if (params.status) query.append("status", params.status);
+  if (params.search) query.append("search", params.search);
+  if (params.page) query.append("page", params.page.toString());
+  if (params.limit) query.append("limit", params.limit.toString());
+
+  const url = `${API_BASE_URL}/admin/business-claims${query.toString() ? `?${query.toString()}` : ""}`;
+
+  const res = await fetch(url, { method: "GET", headers: authHeaders() });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal memuat daftar klaim bisnis");
+  }
+  return data;
+}
+
+/**
+ * GET /admin/business-claims/:id (requires SUPER_ADMIN auth)
+ */
+export async function fetchAdminBusinessClaimDetail(
+  id: string
+): Promise<ApiAdminBusinessClaimDetail> {
+  const url = `${API_BASE_URL}/admin/business-claims/${encodeURIComponent(id)}`;
+
+  const res = await fetch(url, { method: "GET", headers: authHeaders() });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data.message || "Gagal memuat detail klaim bisnis");
+  }
+  return data;
+}
+
+/**
+ * POST /admin/business-claims/:id/approve (requires SUPER_ADMIN auth)
+ */
+export async function approveBusinessClaim(
+  id: string,
+  adminNotes?: string
+): Promise<{ success: boolean; message: string }> {
+  const url = `${API_BASE_URL}/admin/business-claims/${encodeURIComponent(id)}/approve`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(adminNotes ? { admin_notes: adminNotes } : {}),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return { success: false, message: data.message || "Gagal menyetujui klaim" };
+  }
+  return data;
+}
+
+/**
+ * POST /admin/business-claims/:id/reject (requires SUPER_ADMIN auth)
+ */
+export async function rejectBusinessClaim(
+  id: string,
+  adminNotes?: string
+): Promise<{ success: boolean; message: string }> {
+  const url = `${API_BASE_URL}/admin/business-claims/${encodeURIComponent(id)}/reject`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(adminNotes ? { admin_notes: adminNotes } : {}),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    return { success: false, message: data.message || "Gagal menolak klaim" };
+  }
+  return data;
+}
+
+/**
  * UI Adapter to convert ApiBusinessListItem to UI Business Model
  */
 export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {

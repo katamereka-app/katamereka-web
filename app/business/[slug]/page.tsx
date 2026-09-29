@@ -3,7 +3,34 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { fetchBusinessBySlug, ApiBusinessDetail } from "@/lib/api-client";
+import { toast } from "sonner";
+import {
+  fetchBusinessBySlug,
+  ApiBusinessDetail,
+  fetchClaimStatus,
+  createBusinessClaim,
+  BusinessClaimStatus,
+  VerificationMethod,
+} from "@/lib/api-client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Search,
   ChevronDown,
@@ -20,8 +47,6 @@ import {
   ThumbsUp,
   MessageCircle,
   MoreVertical,
-  AppWindow,
-  Smartphone,
   ArrowUp,
   LayoutDashboard,
   MessageSquare,
@@ -37,13 +62,22 @@ import { useAuth } from "@/lib/auth-context";
 export default function BusinessProfilePage() {
   const params = useParams();
   const slug = (params.slug as string) || "";
-  const { user } = useAuth();
+  const { user, isLoggedIn } = useAuth();
 
   const [apiDetail, setApiDetail] = useState<ApiBusinessDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"profil" | "review" | "foto" | "info">("profil");
   const [isSaved, setIsSaved] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<BusinessClaimStatus | null>(null);
+  const [claimStatusLoading, setClaimStatusLoading] = useState(false);
+  const [claimModalOpen, setClaimModalOpen] = useState(false);
+  const [claimSubmitting, setClaimSubmitting] = useState(false);
+  const [claimForm, setClaimForm] = useState<{
+    verification_method: VerificationMethod;
+    proof_url: string;
+    message: string;
+  }>({ verification_method: "DOCUMENT", proof_url: "", message: "" });
 
   useEffect(() => {
     async function loadApiBusinessDetail() {
@@ -62,6 +96,43 @@ export default function BusinessProfilePage() {
     }
     loadApiBusinessDetail();
   }, [slug]);
+
+  useEffect(() => {
+    async function loadClaimStatus() {
+      if (!isLoggedIn || !apiDetail?.id) return;
+      setClaimStatusLoading(true);
+      try {
+        const res = await fetchClaimStatus(apiDetail.id);
+        setClaimStatus(res.status);
+      } finally {
+        setClaimStatusLoading(false);
+      }
+    }
+    loadClaimStatus();
+  }, [isLoggedIn, apiDetail?.id]);
+
+  async function handleSubmitClaim() {
+    if (!apiDetail?.id) return;
+    setClaimSubmitting(true);
+    try {
+      const res = await createBusinessClaim(apiDetail.id, {
+        verification_method: claimForm.verification_method,
+        proof_url: claimForm.proof_url.trim() || undefined,
+        message: claimForm.message.trim() || undefined,
+      });
+      if (res.success) {
+        toast.success(res.message || "Klaim berhasil dikirim, menunggu peninjauan admin.");
+        setClaimStatus("PENDING");
+        setClaimModalOpen(false);
+      } else {
+        toast.error(res.message || "Gagal mengirim klaim bisnis");
+      }
+    } catch (e) {
+      toast.error("Terjadi kesalahan koneksi saat mengirim klaim");
+    } finally {
+      setClaimSubmitting(false);
+    }
+  }
 
   const initials = apiDetail?.name
     ? apiDetail.name
@@ -509,23 +580,122 @@ export default function BusinessProfilePage() {
                   Buka Dashboard
                 </Link>
               </div>
-            ) : (
+            ) : apiDetail?.status === "CLAIMED" ? null : !isLoggedIn ? (
               <div className="bg-gradient-to-r from-emerald-50 via-[#ebf7f3] to-teal-50 rounded-3xl border border-emerald-200 p-6 shadow-xs space-y-3">
                 <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
                   <ShieldCheck className="w-5 h-5 text-[#008767]" />
                   <span>Pemilik bisnis ini?</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Klaim profil bisnis Anda untuk memperbarui data & foto.
+                  Masuk untuk klaim bisnis ini, kelola profil, dan balas review pelanggan.
                 </p>
                 <Link
-                  href="/signup?role=bisnis"
-                  className="block w-full text-center py-2.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white text-xs font-semibold shadow-xs transition-all"
+                  href="/login"
+                  className="block w-full text-center py-2.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
                 >
-                  Klaim Akun Bisnis
+                  Masuk untuk Klaim Bisnis
                 </Link>
               </div>
+            ) : claimStatus === "PENDING" ? (
+              <div className="bg-gradient-to-r from-amber-50 via-amber-50/80 to-orange-50 rounded-3xl border border-amber-200 p-6 shadow-xs space-y-2">
+                <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+                  <ShieldCheck className="w-5 h-5 text-amber-700" />
+                  <span>Klaim Sedang Ditinjau</span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Pengajuan klaim Anda untuk bisnis ini sedang diperiksa oleh tim admin Katamereka. Kami akan memberi kabar setelah proses selesai.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-emerald-50 via-[#ebf7f3] to-teal-50 rounded-3xl border border-emerald-200 p-6 shadow-xs space-y-3">
+                <div className="flex items-center gap-2 text-emerald-800 font-bold text-sm">
+                  <ShieldCheck className="w-5 h-5 text-[#008767]" />
+                  <span>Apakah Anda pemilik bisnis ini?</span>
+                </div>
+                {claimStatus === "REJECTED" && (
+                  <p className="text-xs text-red-600 leading-relaxed">
+                    Klaim sebelumnya ditolak. Anda bisa mengajukan klaim ulang dengan bukti kepemilikan yang lebih lengkap.
+                  </p>
+                )}
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Kelola profil bisnis Anda, balas review, dan jangkau lebih banyak pelanggan.
+                </p>
+                <button
+                  type="button"
+                  disabled={claimStatusLoading || !apiDetail?.id}
+                  onClick={() => setClaimModalOpen(true)}
+                  className="block w-full text-center py-2.5 rounded-xl bg-[#008767] hover:bg-[#007458] disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-xs transition-all active:scale-95"
+                >
+                  {claimStatusLoading
+                    ? "Memeriksa status..."
+                    : claimStatus === "REJECTED"
+                      ? "Ajukan Klaim Ulang"
+                      : "Klaim Bisnis Ini"}
+                </button>
+              </div>
             )}
+
+            <Dialog open={claimModalOpen} onOpenChange={setClaimModalOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Klaim {apiDetail?.name}</DialogTitle>
+                  <DialogDescription>
+                    Lengkapi bukti kepemilikan agar tim kami dapat memverifikasi klaim Anda.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="claim-method">Metode Verifikasi</Label>
+                    <Select
+                      value={claimForm.verification_method}
+                      onValueChange={(v) =>
+                        typeof v === "string" &&
+                        setClaimForm((f) => ({ ...f, verification_method: v as VerificationMethod }))
+                      }
+                    >
+                      <SelectTrigger id="claim-method">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="DOCUMENT">Dokumen Resmi</SelectItem>
+                        <SelectItem value="WEBSITE">Website Bisnis</SelectItem>
+                        <SelectItem value="EMAIL">Email Bisnis</SelectItem>
+                        <SelectItem value="PHONE">Nomor Telepon</SelectItem>
+                        <SelectItem value="OTHER">Lainnya</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="claim-proof-url">Link Bukti (opsional)</Label>
+                    <Input
+                      id="claim-proof-url"
+                      type="url"
+                      placeholder="https://..."
+                      value={claimForm.proof_url}
+                      onChange={(e) => setClaimForm((f) => ({ ...f, proof_url: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="claim-message">Pesan untuk Admin (opsional)</Label>
+                    <Textarea
+                      id="claim-message"
+                      rows={3}
+                      placeholder="Jelaskan hubungan Anda dengan bisnis ini..."
+                      value={claimForm.message}
+                      onChange={(e) => setClaimForm((f) => ({ ...f, message: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setClaimModalOpen(false)}>
+                    Batal
+                  </Button>
+                  <Button onClick={handleSubmitClaim} disabled={claimSubmitting}>
+                    {claimSubmitting ? "Mengirim..." : "Kirim Klaim"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
           </div>
 
@@ -536,7 +706,7 @@ export default function BusinessProfilePage() {
       <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 text-slate-600 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-6 space-y-4">
               <Link href="/" className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#008767] flex items-center justify-center text-white">
                   <MessageSquare className="w-4 h-4 fill-white/20" />
@@ -550,7 +720,7 @@ export default function BusinessProfilePage() {
               </p>
             </div>
 
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-3 space-y-3">
               <h4 className="font-bold text-slate-900 text-sm">Tautan Cepat</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
                 <li><Link href="/" className="hover:text-[#008767]">Beranda</Link></li>
@@ -564,19 +734,6 @@ export default function BusinessProfilePage() {
                 <li><Link href="/businesses" className="hover:text-[#008767]">Hotel & Akomodasi</Link></li>
                 <li><Link href="/businesses" className="hover:text-[#008767]">Restoran & Kuliner</Link></li>
               </ul>
-            </div>
-
-            <div className="lg:col-span-3 space-y-3">
-              <h4 className="font-bold text-slate-900 text-sm">Download Aplikasi</h4>
-              <div className="space-y-2">
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 cursor-pointer">
-                  <AppWindow className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[10px] text-slate-300 leading-none">Download on the</p>
-                    <p className="text-xs font-semibold leading-tight mt-0.5">App Store</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 

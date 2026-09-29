@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
@@ -24,7 +24,6 @@ import {
   ShoppingBag,
   Store,
   MessageSquare,
-  AppWindow,
   ArrowUp,
   X,
 } from "lucide-react";
@@ -343,7 +342,7 @@ export default function SavedPage() {
       <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 text-slate-600 text-sm mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-6 space-y-4">
               <Link href="/" className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#008767] flex items-center justify-center text-white">
                   <MessageSquare className="w-4 h-4" style={{ fill: "rgba(255,255,255,0.2)" }} />
@@ -367,7 +366,7 @@ export default function SavedPage() {
                 ))}
               </div>
             </div>
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-3 space-y-3">
               <h4 className="font-bold text-slate-900 text-sm">Tautan Cepat</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
                 <li><Link href="/" className="hover:text-[#008767] transition-colors">Beranda</Link></li>
@@ -376,7 +375,7 @@ export default function SavedPage() {
                 <li><Link href="/profile" className="hover:text-[#008767] transition-colors">Profil Saya</Link></li>
               </ul>
             </div>
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-3 space-y-3">
               <h4 className="font-bold text-slate-900 text-sm">Dukungan</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
                 <li><Link href="#" className="hover:text-[#008767] transition-colors">Pusat Bantuan</Link></li>
@@ -384,26 +383,6 @@ export default function SavedPage() {
                 <li><Link href="#" className="hover:text-[#008767] transition-colors">Syarat & Ketentuan</Link></li>
                 <li><Link href="#" className="hover:text-[#008767] transition-colors">Hubungi Kami</Link></li>
               </ul>
-            </div>
-            <div className="lg:col-span-4 space-y-3">
-              <h4 className="font-bold text-slate-900 text-sm">Download Aplikasi</h4>
-              <p className="text-xs text-slate-500">Nikmati pengalaman lebih baik di perangkatmu.</p>
-              <div className="space-y-2 pt-1">
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 cursor-pointer hover:bg-slate-800 transition-colors w-fit">
-                  <AppWindow className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[10px] text-slate-300 leading-none">Download on the</p>
-                    <p className="text-xs font-semibold leading-tight mt-0.5">App Store</p>
-                  </div>
-                </div>
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 cursor-pointer hover:bg-slate-800 transition-colors w-fit">
-                  <Smartphone className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[10px] text-slate-300 leading-none">GET IT ON</p>
-                    <p className="text-xs font-semibold leading-tight mt-0.5">Google Play</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
