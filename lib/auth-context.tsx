@@ -61,6 +61,25 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
+// Lightweight, non-sensitive marker cookie so middleware (edge, no access to
+// localStorage) can tell a session exists and gate /dashboard server-side.
+// The real credential stays in localStorage's accessToken as before.
+function setSessionCookie() {
+  try {
+    document.cookie = "km_session=1; path=/; max-age=2592000; SameSite=Lax";
+  } catch (e) {
+    // ignore
+  }
+}
+
+function clearSessionCookie() {
+  try {
+    document.cookie = "km_session=; path=/; max-age=0; SameSite=Lax";
+  } catch (e) {
+    // ignore
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -75,6 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           role: parsed.role || "customer",
         });
         setIsLoggedIn(true);
+        setSessionCookie();
       }
     } catch (e) {
       // Ignore fallback
@@ -157,6 +177,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setUser(loadedUser);
       setIsLoggedIn(true);
+      setSessionCookie();
 
       if (data.accessToken) {
         localStorage.setItem("accessToken", data.accessToken);
@@ -205,6 +226,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setUser(fallbackUser);
       setIsLoggedIn(true);
+      setSessionCookie();
       localStorage.setItem("katamereka_active_user", JSON.stringify(fallbackUser));
 
       return {
@@ -346,6 +368,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     setUser(null);
     setIsLoggedIn(false);
+    clearSessionCookie();
     try {
       localStorage.removeItem("katamereka_active_user");
       localStorage.removeItem("accessToken");

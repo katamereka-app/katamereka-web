@@ -6,6 +6,8 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/auth-context";
 import { getBusinessUrl } from "@/lib/domain";
+import { fetchCategoryFacets, ApiCategoryFacet } from "@/lib/api-client";
+import { slugify, categoryDisplayName } from "@/lib/slug";
 import {
   MessageSquare,
   ChevronDown,
@@ -39,12 +41,14 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
   const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [businessUrl, setBusinessUrl] = useState("/bisnis");
+  const [categoryFacets, setCategoryFacets] = useState<ApiCategoryFacet[]>([]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
     setBusinessUrl(getBusinessUrl());
+    fetchCategoryFacets().then((facets) => setCategoryFacets(facets.slice(0, 10)));
 
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -122,24 +126,22 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
             /* Business Landing Header Nav Items */
             <>
               <Link
-                href="/bisnis#solusi"
-                className="transition-colors hover:text-[#008767] flex items-center gap-1"
+                href="/solusi"
+                className={`transition-colors hover:text-[#008767] ${isActive("/solusi") ? "text-[#008767] font-bold" : ""}`}
               >
-                <span>Solusi</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                Solusi
               </Link>
 
               <Link
-                href="/bisnis#produk"
-                className="transition-colors hover:text-[#008767] flex items-center gap-1"
+                href="/produk"
+                className={`transition-colors hover:text-[#008767] ${isActive("/produk") ? "text-[#008767] font-bold" : ""}`}
               >
-                <span>Produk</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                Produk
               </Link>
 
               <Link
-                href="/bisnis#harga"
-                className="transition-colors hover:text-[#008767]"
+                href="/harga"
+                className={`transition-colors hover:text-[#008767] ${isActive("/harga") ? "text-[#008767] font-bold" : ""}`}
               >
                 Harga
               </Link>
@@ -221,13 +223,31 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
                 <ChevronDown className="w-4 h-4 opacity-70 group-hover:rotate-180 transition-transform" />
               </Link>
 
-              <Link
-                href="/businesses"
-                className="relative group flex items-center gap-1 transition-colors hover:text-[#008767]"
-              >
-                <span>Kategori</span>
-                <ChevronDown className="w-4 h-4 opacity-70 group-hover:rotate-180 transition-transform" />
-              </Link>
+              <div className="relative group">
+                <Link
+                  href="/businesses"
+                  className="flex items-center gap-1 transition-colors hover:text-[#008767]"
+                >
+                  <span>Kategori</span>
+                  <ChevronDown className="w-4 h-4 opacity-70 group-hover:rotate-180 transition-transform" />
+                </Link>
+                {/* Rendered unconditionally (not gated behind JS state) so
+                    every category link is present in the server HTML for
+                    crawlers, and only its visibility is toggled on hover. */}
+                <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute left-0 top-full pt-2 transition-all duration-150 z-50">
+                  <div className="w-56 bg-white rounded-2xl shadow-xl border border-slate-200/80 py-2">
+                    {categoryFacets.map((c) => (
+                      <Link
+                        key={c.category}
+                        href={`/kategori/${slugify(c.category)}`}
+                        className="block px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#008767] transition-colors"
+                      >
+                        {categoryDisplayName(c.category)}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <Link
                 href="/tentang-kami"
@@ -439,7 +459,55 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
 
               {/* Links List */}
               <div className="space-y-1">
-                {isBusinessUser ? (
+                {isBusinessView && !isBusinessUser ? (
+                  <>
+                    <Link
+                      href="/solusi"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block py-2.5 px-4 rounded-xl text-base font-semibold transition-colors ${
+                        isActive("/solusi") ? "bg-emerald-50 text-[#008767] font-bold" : "text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      Solusi
+                    </Link>
+                    <Link
+                      href="/produk"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block py-2.5 px-4 rounded-xl text-base font-semibold transition-colors ${
+                        isActive("/produk") ? "bg-emerald-50 text-[#008767] font-bold" : "text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      Produk
+                    </Link>
+                    <Link
+                      href="/harga"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block py-2.5 px-4 rounded-xl text-base font-semibold transition-colors ${
+                        isActive("/harga") ? "bg-emerald-50 text-[#008767] font-bold" : "text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      Harga
+                    </Link>
+                    <Link
+                      href="/bantuan"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block py-2.5 px-4 rounded-xl text-base font-semibold transition-colors ${
+                        isActive("/bantuan") ? "bg-emerald-50 text-[#008767] font-bold" : "text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      Bantuan
+                    </Link>
+                    <Link
+                      href="/tentang-kami"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block py-2.5 px-4 rounded-xl text-base font-semibold transition-colors ${
+                        isActive("/tentang-kami") ? "bg-emerald-50 text-[#008767] font-bold" : "text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      Tentang Kami
+                    </Link>
+                  </>
+                ) : isBusinessUser ? (
                   <>
                     <Link
                       href="/bisnis"

@@ -1,21 +1,39 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { isBusinessHost } from "@/lib/site-config";
+
+// Paths that require an authenticated session. Checked server-side here so
+// an unauthenticated visitor never receives the page HTML (a client-side
+// redirect after hydration would still leak the shell + a 200 status).
+const PROTECTED_PATH_PREFIXES = ["/dashboard", "/settings"];
+
+function isProtectedPath(pathname: string): boolean {
+  return PROTECTED_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
 
-  // Check if accessing via business subdomain
-  // Examples: business.katamereka.id, business.localhost, business.localhost:3000, business.localhost.id
-  const isBusinessSubdomain =
-    hostname.startsWith("business.") ||
-    hostname.startsWith("business-") ||
-    hostname.includes(".business.");
+  const isBusinessSubdomain = isBusinessHost(hostname);
 
-  // Create response headers to pass subdomain info down to client/server components if needed
   const requestHeaders = new Headers(request.headers);
   if (isBusinessSubdomain) {
     requestHeaders.set("x-is-business-subdomain", "true");
+  }
+
+  if (isProtectedPath(pathname)) {
+    const hasSession = request.cookies.get("km_session")?.value === "1";
+    if (!hasSession) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      if (isBusinessSubdomain) {
+        loginUrl.searchParams.set("role", "bisnis");
+      }
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   // Rewrite root '/' to '/bisnis' when on business subdomain
