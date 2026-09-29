@@ -462,46 +462,43 @@ export default function BusinessesPage() {
               )}
 
               {/* Pagination Bar */}
-              <div className="flex items-center justify-center gap-1.5 pt-6 text-xs font-semibold">
+              <div className="flex items-center justify-center gap-2 pt-6 text-xs font-semibold">
+                {/* Previous Button */}
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767] flex items-center justify-center transition-colors disabled:opacity-40"
+                  className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767] flex items-center justify-center transition-colors disabled:opacity-40 shrink-0 shadow-2xs"
                 >
                   ‹
                 </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`w-8 h-8 rounded-lg font-semibold transition-all ${
-                      currentPage === page
-                        ? "bg-[#008767] text-white shadow-xs"
-                        : "bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767]"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                {totalPages > 5 && (
-                  <>
-                    <span className="px-1 text-slate-400">...</span>
+
+                {/* 5-Box Width Scrollable Container */}
+                <div className="flex items-center gap-1.5 overflow-x-auto max-w-[220px] py-1 px-1 no-scrollbar scroll-smooth">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      className={`w-8 h-8 rounded-lg font-semibold transition-all ${
-                        currentPage === totalPages
-                          ? "bg-[#008767] text-white shadow-xs"
+                      key={page}
+                      ref={(el) => {
+                        if (currentPage === page && el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        }
+                      }}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 rounded-xl font-bold shrink-0 transition-all ${
+                        currentPage === page
+                          ? "bg-[#008767] text-white shadow-md shadow-[#008767]/25"
                           : "bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767]"
                       }`}
                     >
-                      {totalPages}
+                      {page}
                     </button>
-                  </>
-                )}
+                  ))}
+                </div>
+
+                {/* Next Button */}
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
-                  className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767] flex items-center justify-center transition-colors disabled:opacity-40"
+                  className="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767] flex items-center justify-center transition-colors disabled:opacity-40 shrink-0 shadow-2xs"
                 >
                   ›
                 </button>
