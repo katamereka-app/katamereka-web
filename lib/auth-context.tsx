@@ -272,7 +272,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           email: lowerEmail,
           password: pass,
           role: role,
-          otp: otp?.trim() || "123456",
+          otp: otp?.trim() || "",
         }),
       });
 
