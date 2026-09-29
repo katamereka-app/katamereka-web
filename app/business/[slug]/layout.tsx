@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { cache } from "react";
+import { notFound } from "next/navigation";
 import { fetchBusinessBySlug } from "@/lib/api-client";
 import { CONSUMER_SITE_URL } from "@/lib/site-config";
+import {
+  buildBusinessDescription,
+  buildBusinessSchema,
+  buildBusinessTitle,
+} from "@/lib/business-seo";
 
 interface LayoutProps {
   params: Promise<{ slug: string }>;
@@ -11,75 +18,56 @@ function cleanCategory(raw: string): string {
   return raw.replace(/^(service|building)\./, "").replace(/_/g, " ").trim();
 }
 
+/**
+ * generateMetadata() and the layout body below both need this business's
+ * data. cache() (React's per-request memoization) makes them share one
+ * fetch instead of issuing two separate requests that could disagree if the
+ * backend is flaky mid-request — that mismatch is exactly how the metadata
+ * (title/description) could end up describing a different business than the
+ * JSON-LD schema on the same page.
+ *
+ * Returns null when the slug has no matching business, or when the API
+ * returned a business whose slug doesn't match — callers must call
+ * notFound() rather than render anything.
+ */
+const getBusiness = cache(async (slug: string) => {
+  const res = await fetchBusinessBySlug(slug);
+  if (!res || !res.data || res.data.slug !== slug) return null;
+  return res.data;
+});
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const res = await fetchBusinessBySlug(slug);
-  const b = res.data;
-  const city = b.city || "Indonesia";
+  const b = await getBusiness(slug);
+  if (!b) notFound();
 
   return {
-    title: `${b.name} — Ulasan & Info di ${city} | Katamereka`,
-    description: `Lihat rating, ulasan pelanggan, dan info lengkap ${b.name} di ${city}${b.address ? `, ${b.address}` : ""}.`,
+    title: buildBusinessTitle(b),
+    description: buildBusinessDescription(b),
     alternates: {
       canonical: `${CONSUMER_SITE_URL}/business/${b.slug}`,
     },
   };
 }
 
-// Renders LocalBusiness + AggregateRating + BreadcrumbList JSON-LD around
-// the (client-rendered) profile page, using a server-side fetch so the
-// markup is present in the initial HTML for crawlers, independent of the
-// page's own client-side data fetch.
+// Renders LocalBusiness/Restaurant/Hotel/... + AggregateRating + BreadcrumbList
+// JSON-LD around the (client-rendered) profile page, using a server-side
+// fetch so the markup is present in the initial HTML for crawlers,
+// independent of the page's own client-side data fetch.
 export default async function BusinessSlugLayout({ params, children }: LayoutProps) {
   const { slug } = await params;
-  const res = await fetchBusinessBySlug(slug);
-  const b = res.data;
+  const b = await getBusiness(slug);
+  if (!b) notFound();
 
-  const ratingValue =
-    typeof b.rating === "number"
-      ? b.rating
-      : parseFloat(String(b.rating ?? b.externalRating ?? "")) || undefined;
-  const reviewCount = b.reviews_count ?? b.externalReviewsCount ?? 0;
   const categoryLabel = cleanCategory(b.category || "") || "Bisnis";
   const categoryUrl = `${CONSUMER_SITE_URL}/businesses?category=${encodeURIComponent(categoryLabel)}`;
   const businessUrl = `${CONSUMER_SITE_URL}/business/${b.slug}`;
 
-  const localBusinessSchema: Record<string, unknown> = {
-    "@context": "https://schema.org",
-    "@type": "LocalBusiness",
-    name: b.name,
-    url: businessUrl,
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: b.address,
-      addressLocality: b.city,
-      addressRegion: b.province,
-      addressCountry: b.country || "ID",
-    },
-  };
-  if (b.phone) localBusinessSchema.telephone = b.phone;
-  if (b.website) localBusinessSchema.sameAs = [b.website];
-  if (typeof b.latitude === "number" && typeof b.longitude === "number") {
-    localBusinessSchema.geo = {
-      "@type": "GeoCoordinates",
-      latitude: b.latitude,
-      longitude: b.longitude,
-    };
-  }
-  // Only attach aggregateRating when there's at least one real review behind
-  // it — markup with no backing reviews violates Google's structured data
-  // guidelines and risks a manual action.
-  if (ratingValue && reviewCount > 0) {
-    localBusinessSchema.aggregateRating = {
-      "@type": "AggregateRating",
-      ratingValue,
-      reviewCount,
-    };
-  }
+  const localBusinessSchema = buildBusinessSchema(b, businessUrl);
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",

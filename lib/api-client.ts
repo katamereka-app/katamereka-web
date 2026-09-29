@@ -90,8 +90,12 @@ export interface ApiBusinessDetail {
   rating?: string | number;
   reviews_count?: number;
   description?: string;
+  short_description?: string | null;
   logo_url?: string;
   cover_url?: string;
+  photos?: string[];
+  opening_hours?: Record<string, unknown>;
+  facilities?: Record<string, unknown>;
   status: string;
   externalSyncedAt?: string;
   createdAt?: string;
@@ -330,10 +334,19 @@ export async function fetchCityFacets(): Promise<ApiCityFacet[]> {
 
 /**
  * 2. GET /businesses/slug/:slug (Business Profile Detail by Slug)
+ *
+ * Returns null when the slug has no matching business — callers (SEO
+ * metadata, JSON-LD, the profile page) must treat that as "not found" and
+ * render nothing/404, never substitute a different business's data. This
+ * function used to fall back to `mockBusinesses[0]` whenever the live API
+ * failed or the slug wasn't recognized, which meant every unknown slug
+ * silently rendered as the first mock business — the cause of the
+ * duplicate-content bug where /business/kole-kole, /business/kost-kinari
+ * etc all got indexed with "Sunny Cafe" metadata.
  */
 export async function fetchBusinessBySlug(
   slug: string
-): Promise<ApiGetBusinessDetailResponse> {
+): Promise<ApiGetBusinessDetailResponse | null> {
   const url = `${API_BASE_URL}/businesses/slug/${encodeURIComponent(slug)}`;
 
   try {
@@ -347,14 +360,21 @@ export async function fetchBusinessBySlug(
 
     if (res.ok) {
       const data = await res.json();
-      return data;
+      if (data?.data?.slug === slug) return data;
+      console.warn(
+        `fetchBusinessBySlug: API returned a business whose slug ("${data?.data?.slug}") doesn't match the requested slug ("${slug}"); treating as not found instead of rendering mismatched data.`
+      );
     }
   } catch (e) {
     console.warn("fetchBusinessBySlug API call failed, using mock fallback:", e);
   }
 
-  // Fallback to local mock business
-  const found = mockBusinesses.find((b) => b.slug === slug) || mockBusinesses[0];
+  // Dev/offline fallback to local mock data — matched strictly by slug, no
+  // "or the first mock business" fallback, so an unknown slug is never
+  // rendered as some other business.
+  const found = mockBusinesses.find((b) => b.slug === slug);
+  if (!found) return null;
+
   return {
     message: "Berhasil mengambil detail bisnis dari Katamereka Engine",
     data: {
@@ -399,10 +419,13 @@ export async function fetchBusinessBySlug(
 
 /**
  * 3. GET /businesses/:id (Business Detail by UUID)
+ *
+ * Same not-found contract as fetchBusinessBySlug() above: null, never a
+ * different business's data.
  */
 export async function fetchBusinessById(
   id: string
-): Promise<ApiGetBusinessDetailResponse> {
+): Promise<ApiGetBusinessDetailResponse | null> {
   const url = `${API_BASE_URL}/businesses/${encodeURIComponent(id)}`;
 
   try {
@@ -416,13 +439,14 @@ export async function fetchBusinessById(
 
     if (res.ok) {
       const data = await res.json();
-      return data;
+      if (data?.data?.id === id) return data;
     }
   } catch (e) {
     console.warn("fetchBusinessById API call failed, using mock fallback:", e);
   }
 
-  const found = mockBusinesses.find((b) => b.id === id) || mockBusinesses[0];
+  const found = mockBusinesses.find((b) => b.id === id);
+  if (!found) return null;
   return fetchBusinessBySlug(found.slug);
 }
 

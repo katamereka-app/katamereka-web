@@ -66,6 +66,7 @@ export default function BusinessProfilePage() {
 
   const [apiDetail, setApiDetail] = useState<ApiBusinessDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFoundState, setNotFoundState] = useState(false);
   const [activeTab, setActiveTab] = useState<"profil" | "review" | "foto" | "info">("profil");
   const [isSaved, setIsSaved] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -83,13 +84,22 @@ export default function BusinessProfilePage() {
     async function loadApiBusinessDetail() {
       if (!slug) return;
       setLoading(true);
+      setNotFoundState(false);
       try {
         const res = await fetchBusinessBySlug(slug);
-        if (res && res.data) {
+        // res.data.slug is guaranteed to match `slug` (fetchBusinessBySlug
+        // returns null otherwise) — this is a defensive check against ever
+        // rendering a different business's data under this URL.
+        if (res && res.data && res.data.slug === slug) {
           setApiDetail(res.data);
+        } else {
+          setApiDetail(null);
+          setNotFoundState(true);
         }
       } catch (err) {
         console.warn("Error loading business detail:", err);
+        setApiDetail(null);
+        setNotFoundState(true);
       } finally {
         setLoading(false);
       }
@@ -192,6 +202,26 @@ export default function BusinessProfilePage() {
             <div className="w-5 h-5 border-2 border-[#008767] border-t-transparent rounded-full animate-spin" />
             <span>Memuat profil bisnis...</span>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFoundState) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 py-24 px-4 text-center">
+          <h1 className="text-xl font-bold text-slate-800">Bisnis tidak ditemukan</h1>
+          <p className="text-sm text-slate-500 max-w-sm">
+            Profil bisnis untuk tautan ini tidak tersedia. Mungkin sudah dihapus atau alamatnya salah.
+          </p>
+          <Link
+            href="/businesses"
+            className="px-5 py-2.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white text-sm font-semibold transition-colors"
+          >
+            Jelajahi Bisnis Lain
+          </Link>
         </div>
       </div>
     );
