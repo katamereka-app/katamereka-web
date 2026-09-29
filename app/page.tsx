@@ -9,8 +9,8 @@ export default async function Page() {
 
   return (
     <LandingPage
-      initialCategoryFacets={categoryFacets.slice(0, 10)}
-      initialCityFacets={cityFacets.slice(0, 10)}
+      initialCategoryFacets={categoryFacets}
+      initialCityFacets={cityFacets}
     />
   );
 }

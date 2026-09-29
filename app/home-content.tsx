@@ -398,46 +398,8 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
               );
             })}
           </div>
-
-          {/* Real links to every category & city landing page — keeps them
-              reachable via a plain HTML link, not just the sitemap. */}
-          <div className="pt-8 border-t border-slate-200/80 space-y-5">
-            {categoryFacets.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5">Kategori Populer</h3>
-                <div className="flex flex-wrap gap-2">
-                  {categoryFacets.map((c) => (
-                    <Link
-                      key={c.category}
-                      href={`/kategori/${slugify(c.category)}`}
-                      className="px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-600 hover:border-[#008767]/40 hover:text-[#008767] transition-colors"
-                    >
-                      {categoryDisplayName(c.category)}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            {cityFacets.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2.5">Kota Populer</h3>
-                <div className="flex flex-wrap gap-2">
-                  {cityFacets.map((c) => (
-                    <Link
-                      key={c.city}
-                      href={`/lokasi/${slugify(c.city)}`}
-                      className="px-3.5 py-1.5 rounded-full bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-600 hover:border-[#008767]/40 hover:text-[#008767] transition-colors"
-                    >
-                      {c.city}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </section>
-
       {/* ================= SECTION 5: FAQ ================= */}
       <section className="py-16 bg-gradient-to-b from-[#f4faf7] to-white border-t border-[#d3f0e5]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
