@@ -1,367 +1,427 @@
 "use client";
 
 import Link from "next/link";
-import Navbar from "@/components/navbar";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Shield,
-  TrendingUp,
-  MessageSquare,
-  Megaphone,
-  Users,
+  Search,
+  CheckCircle2,
+  XCircle,
+  ShieldCheck,
+  Settings,
   Star,
-  BarChart3,
-  Award,
   ArrowRight,
   MapPin,
-  CheckCircle2,
-  Store,
-  AppWindow,
-  Smartphone,
-  ArrowUp,
-  Zap,
-  Check,
-  Building2,
-  Lock,
-  Globe,
-  HelpCircle,
-  X
 } from "lucide-react";
+import Navbar from "@/components/navbar";
 
 export default function BisnisLandingPage() {
+  const router = useRouter();
+  const [heroSearch, setHeroSearch] = useState("");
+  const [middleSearch, setMiddleSearch] = useState("");
+  const [bottomSearch, setBottomSearch] = useState("");
+
+  const handleSearchSubmit = (query: string, e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    } else {
+      router.push("/search");
+    }
+  };
+
+  const sampleBusinesses = [
+    {
+      name: "Sunny Cafe & Bakery",
+      category: "Kafe & Restoran",
+      location: "Jakarta Selatan",
+      rating: 4.7,
+      reviews: 128,
+      slug: "sunny-cafe-bakery",
+    },
+    {
+      name: "Klinik Sehat Sentosa",
+      category: "Klinik",
+      location: "Jakarta Selatan",
+      rating: 4.8,
+      reviews: 86,
+      slug: "klinik-sehat-sentosa",
+    },
+    {
+      name: "AutoCare Garage",
+      category: "Bengkel",
+      location: "Jakarta Barat",
+      rating: 4.6,
+      reviews: 54,
+      slug: "autocare-garage",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 antialiased selection:bg-[#008767] selection:text-white">
-      {/* Header / Navbar */}
+    <div className="min-h-screen bg-white flex flex-col font-sans text-slate-800 antialiased selection:bg-[#008767] selection:text-white">
       <Navbar isBusinessPage={true} />
 
       <main className="flex-1">
-        {/* ================= HERO SECTION (Katamereka Emerald Signature Design) ================= */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-[#e8f6f2] via-[#f4faf7] to-white pt-10 pb-16 sm:pt-16 sm:pb-24 border-b border-emerald-100/60">
-          {/* Background Decorative Blur Orbs */}
-          <div className="absolute top-10 left-10 w-96 h-96 bg-[#008767]/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-[#008767]/15 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-              
-              {/* Left Column: Hero Text & Actions */}
-              <div className="lg:col-span-6 space-y-6 text-left">
-                {/* Main Heading */}
-                <h1 className="text-3xl sm:text-5xl lg:text-[2.85rem] font-extrabold text-slate-900 leading-tight sm:leading-[1.2] tracking-tight">
-                  Tingkatkan Kepercayaan & Kembangkan Bisnis Anda Bersama{" "}
-                  <span className="text-[#008767]">Katamereka</span>
-                </h1>
-
-                {/* Subtitle */}
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl font-medium">
-                  Dapatkan ulasan nyata pelanggan, tingkatkan visibilitas usaha Anda, dan tanggapi setiap pengalaman secara profesional dari satu dashboard terpadu.
-                </p>
-
-                {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2">
-                  <Link
-                    href="/signup?role=bisnis"
-                    className="px-7 py-3.5 rounded-xl bg-[#008767] hover:bg-[#007055] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-[#008767]/25 hover:shadow-xl transition-all hover:-translate-y-0.5 active:translate-y-0"
-                  >
-                    <span>Daftar Akun Bisnis Gratis</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-
-                  <Link
-                    href="/signup?role=bisnis&claim=true"
-                    className="px-6 py-3.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm sm:text-base border border-slate-200/90 flex items-center justify-center shadow-xs transition-all hover:border-slate-300"
-                  >
-                    Klaim Bisnis Anda
-                  </Link>
-                </div>
-
-                {/* Feature Checklist */}
-                <div className="pt-2 flex flex-wrap items-center gap-6 text-xs text-slate-600 font-semibold">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#008767]" />
-                    <span>Daftar Gratis 100%</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#008767]" />
-                    <span>Verifikasi Resmi Instan</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Hero Visual Illustration */}
-              <div className="lg:col-span-6 flex justify-center items-center">
-                <div className="relative w-full max-w-xl">
-                  <img
-                    src="/ilus.webp"
-                    alt="Katamereka Bisnis Illustration"
-                    className="w-full h-auto object-contain scale-105 transform transition-transform duration-300 drop-shadow-xl"
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* ================= FEATURE HIGHLIGHT BAR ================= */}
-        <section className="py-10 bg-white border-b border-slate-100">
+        {/* ===== SECTION 1: HERO ===== */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-[#e8f5f0] via-[#f3faf7] to-white pt-10 pb-16 sm:pb-24 border-b border-emerald-100/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                {
-                  icon: Shield,
-                  title: "Tingkatkan Kepercayaan",
-                  desc: "Tampilkan ulasan asli dari pelanggan terverifikasi.",
-                },
-                {
-                  icon: TrendingUp,
-                  title: "Pantau Performa",
-                  desc: "Lihat tren rating dan statistik ulasan secara real-time.",
-                },
-                {
-                  icon: MessageSquare,
-                  title: "Kelola Respons Ulasan",
-                  desc: "Tanggapi saran & kesan pelanggan dengan cepat.",
-                },
-                {
-                  icon: Megaphone,
-                  title: "Perluas Jangkauan",
-                  desc: "Jangkau ribuan calon pembeli baru di Katamereka.",
-                },
-              ].map((item, idx) => {
-                const IconComponent = item.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-3.5 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 hover:bg-white hover:border-[#008767]/30 hover:shadow-md transition-all"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[#008767]/10 text-[#008767] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <IconComponent className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 text-sm">{item.title}</h3>
-                      <p className="text-xs text-slate-500 leading-relaxed mt-0.5">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
-        {/* ================= KENAPA BERGABUNG SECTION ================= */}
-        <section id="solusi" className="py-16 sm:py-24 bg-slate-50/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-              
-              {/* Left Column: Heading & Description */}
-              <div className="lg:col-span-5 space-y-4">
-                <p className="text-[#008767] font-bold text-xs sm:text-sm tracking-wide uppercase">
-                  Kenapa Bergabung dengan Katamereka?
-                </p>
-                <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
-                  Lebih dari Sekadar Ulasan,{" "}
-                  <span className="relative inline-block text-[#008767]">
-                    Ini Tentang Pertumbuhan Bisnis Anda
-                  </span>
-                </h2>
-                <p className="text-sm sm:text-base text-slate-600 leading-relaxed pt-2">
-                  Katamereka membantu bisnis dari berbagai industri untuk membangun reputasi, meningkatkan visibilitas, dan mendapatkan pelanggan baru melalui ulasan yang autentik.
-                </p>
-
-                <div className="pt-4">
-                  <Link
-                    href="/signup?role=bisnis"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#008767] hover:bg-[#007055] text-white font-bold text-sm shadow-md transition-all"
-                  >
-                    <span>Mulai Sekarang</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Right Column: 2x2 Feature Cards */}
-              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                {[
-                  {
-                    icon: Users,
-                    title: "Kelola Profil Bisnis",
-                    desc: "Lengkapi informasi bisnis Anda agar mudah ditemukan oleh calon pelanggan.",
-                  },
-                  {
-                    icon: Star,
-                    title: "Pantau & Tanggapi Ulasan",
-                    desc: "Bangun hubungan yang lebih baik dengan merespons apresiasi maupun masukan.",
-                  },
-                  {
-                    icon: BarChart3,
-                    title: "Analitik & Insight",
-                    desc: "Dapatkan data penting untuk mengevaluasi kualitas produk dan layanan Anda.",
-                  },
-                  {
-                    icon: Award,
-                    title: "Meningkatkan Kredibilitas",
-                    desc: "Tunjukkan bahwa bisnis Anda terverifikasi dan dipercaya oleh pelanggan.",
-                  },
-                ].map((card, idx) => {
-                  const CardIcon = card.icon;
-                  return (
-                    <div
-                      key={idx}
-                      className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-xs hover:shadow-lg hover:border-[#008767]/40 transition-all space-y-3"
-                    >
-                      <div className="w-11 h-11 rounded-xl bg-emerald-50 text-[#008767] flex items-center justify-center border border-emerald-100">
-                        <CardIcon className="w-5 h-5" />
-                      </div>
-                      <h3 className="font-bold text-slate-900 text-base">{card.title}</h3>
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                        {card.desc}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-
-            </div>
-          </div>
-        </section>
-
-        {/* ================= PRODUK & KLAIM BISNIS SECTION ================= */}
-        <section id="produk" className="py-16 sm:py-24 bg-white border-t border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              
+              {/* Left */}
               <div className="lg:col-span-6 space-y-6">
-                <span className="text-[#008767] font-bold text-xs uppercase tracking-wider">
-                  Dashboard Bisnis Terpadu
+                <span className="inline-flex items-center text-[11px] font-extrabold uppercase tracking-widest bg-emerald-100 text-[#008767] px-3 py-1.5 rounded-full border border-emerald-200">
+                  UNTUK PEMILIK BISNIS
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
-                  Klaim Profil Bisnis Anda & Ambil Kendali Penuh
-                </h2>
-                <p className="text-slate-600 text-base leading-relaxed">
-                  Banyak pelanggan mungkin sudah mengulas bisnis Anda di Katamereka. Klaim halaman bisnis Anda sekarang untuk membalas ulasan, memperbarui alamat & kontak, serta melihat analitik pengunjung.
+                <h1 className="text-3xl sm:text-4xl lg:text-[2.6rem] font-extrabold text-slate-900 leading-[1.15] tracking-tight">
+                  Bisnis Anda Sudah Terdaftar di Katamereka.{" "}
+                  <span className="text-[#008767]">Klaim Profilnya. Kelola Reputasinya.</span>
+                </h1>
+                <p className="text-sm sm:text-base text-slate-500 leading-relaxed max-w-lg">
+                  Cari bisnis Anda untuk melihat dan mengklaim profilnya secara gratis.
+                  Lengkapi informasi, tanggapi ulasan, dan kelola reputasi bisnis Anda.
                 </p>
 
-                <div className="space-y-3 pt-2">
-                  {[
-                    "Kelola halaman profil resmi bisnis Anda",
-                    "Dapatkan notifikasi langsung setiap ada ulasan baru",
-                    "Akses laporan analitik sentimen ulasan mingguan",
-                    "Dapatkan lencana Terverifikasi Katamereka"
-                  ].map((feat, i) => (
-                    <div key={i} className="flex items-center gap-3 text-slate-700 text-sm font-semibold">
-                      <div className="w-5 h-5 rounded-full bg-[#008767]/10 text-[#008767] flex items-center justify-center shrink-0">
-                        <Check className="w-3.5 h-3.5" />
-                      </div>
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4">
-                  <Link
-                    href="/signup?role=bisnis"
-                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#008767] hover:bg-[#007055] text-white font-bold text-base shadow-lg shadow-[#008767]/20 transition-all hover:scale-105"
+                <form
+                  onSubmit={(e) => handleSearchSubmit(heroSearch, e)}
+                  className="flex items-center bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden max-w-md focus-within:ring-2 focus-within:ring-[#008767]/25 transition-all"
+                >
+                  <Search className="w-4 h-4 text-slate-400 ml-4 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Nama bisnis atau lokasi"
+                    value={heroSearch}
+                    onChange={(e) => setHeroSearch(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400 text-sm py-3.5 px-3"
+                  />
+                  <button
+                    type="submit"
+                    className="px-6 py-3.5 bg-[#008767] hover:bg-[#007458] text-white text-sm font-semibold shrink-0 transition-colors"
                   >
-                    <span>Daftar Akun Bisnis Gratis</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                    Cari
+                  </button>
+                </form>
+
+                <div className="flex flex-wrap items-center gap-5 text-[11px] font-medium text-slate-500">
+                  <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-[#008767]" />Gratis untuk diklaim</span>
+                  <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-[#008767]" />Verifikasi pemilik</span>
+                  <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-[#008767]" />Kelola profil bisnis</span>
                 </div>
               </div>
 
-              <div className="lg:col-span-6 flex justify-center">
-                <div className="bg-slate-50/80 rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-xl space-y-6 w-full max-w-lg">
-                  <div className="flex items-center gap-3 pb-4 border-b border-slate-200/80">
-                    <div className="w-12 h-12 rounded-2xl bg-[#008767] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-[#008767]/20">
-                      SC
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-lg">Sunny Cafe & Bakery</h4>
-                      <p className="text-xs text-slate-500">Jakarta Selatan • Kuliner & Resto</p>
-                    </div>
-                    <span className="ml-auto bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-300">
-                      Terverifikasi
-                    </span>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-2">
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Ulasan Pelanggan</span>
-                        <span className="text-[#008767] font-bold">Terbaru</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-amber-400">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
-                        ))}
-                      </div>
-                      <p className="text-xs text-slate-700 font-medium">
-                        "Pelayanan ramah banget, kopi dan suasananya oke buat kerja remote!"
-                      </p>
-                    </div>
-
-                    <div className="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 space-y-2">
-                      <p className="text-xs font-bold text-[#008767]">Tanggapan Pemilik Bisnis:</p>
-                      <p className="text-xs text-slate-700">
-                        "Terima kasih Kak! Kami senang bisa memberikan tempat yang nyaman untuk Anda."
-                      </p>
-                    </div>
-                  </div>
-
-                </div>
+              {/* Right: Real hero image */}
+              <div className="lg:col-span-6 flex justify-center items-center">
+                <img
+                  src="/bisnis-hero.png"
+                  alt="Klaim profil bisnis Anda di Katamereka"
+                  className="w-full max-w-xl h-auto object-contain drop-shadow-xl"
+                  loading="eager"
+                />
               </div>
 
             </div>
           </div>
         </section>
 
-        {/* ================= BOTTOM CTA BANNER ================= */}
-        <section className="py-16 sm:py-20 bg-gradient-to-r from-[#006e54] to-[#008767] text-white">
-          <div className="max-w-5xl mx-auto px-4 text-center space-y-6">
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-              Siap Kembangkan Bisnis Anda Bersama Katamereka?
+        {/* ===== SECTION 2: 3 LANGKAH MUDAH ===== */}
+        <section id="cara-kerja" className="py-14 sm:py-20 bg-white border-b border-slate-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            <div className="space-y-2">
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-[#008767]">CARA MENGAJUKAN KLAIM</p>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Hanya 3 Langkah Mudah</h2>
+              <p className="text-sm text-slate-500">Klaim profil bisnis Anda dalam hitungan menit.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto_1fr] gap-4 items-start">
+              {/* Step 1 */}
+              <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+                    <Search className="w-5 h-5 text-[#008767]" />
+                  </div>
+                  <span className="absolute -top-2 -left-1 text-[10px] font-extrabold text-[#008767]">01</span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Cari Bisnis Anda</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">Temukan profil bisnis Anda di Katamereka dengan nama atau lokasi.</p>
+                </div>
+              </div>
+
+              <div className="hidden md:flex items-center justify-center pt-6">
+                <ArrowRight className="w-5 h-5 text-slate-300" />
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5 text-[#008767]" />
+                  </div>
+                  <span className="absolute -top-2 -left-1 text-[10px] font-extrabold text-[#008767]">02</span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Klaim & Verifikasi</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">Pastikan Anda adalah pemilik atau perwakilan bisnis.</p>
+                </div>
+              </div>
+
+              <div className="hidden md:flex items-center justify-center pt-6">
+                <ArrowRight className="w-5 h-5 text-slate-300" />
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-sm flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-[#008767]" />
+                  </div>
+                  <span className="absolute -top-2 -left-1 text-[10px] font-extrabold text-[#008767]">03</span>
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-bold text-slate-900 text-sm">Kelola Bisnis Anda</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">Perbarui informasi, tanggapi ulasan, dan lihat insight bisnis.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== SECTION 3: CONTOH BISNIS (CAROUSEL) ===== */}
+        <section className="py-14 sm:py-20 bg-slate-50 border-b border-slate-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+
+              {/* Left */}
+              <div className="lg:col-span-5 space-y-4">
+                <p className="text-[11px] font-extrabold uppercase tracking-widest text-[#008767]">CONTOH BISNIS YANG SUDAH ADA</p>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                  Mungkin Pelanggan Anda Sudah Membicarakan Bisnis Anda
+                </h2>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Temukan bisnis Anda di Katamereka. Lihat bagaimana pelanggan menemukan dan menilai bisnis Anda.
+                </p>
+                <form
+                  onSubmit={(e) => handleSearchSubmit(middleSearch, e)}
+                  className="flex items-center bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden focus-within:ring-2 focus-within:ring-[#008767]/25 transition-all"
+                >
+                  <Search className="w-4 h-4 text-slate-400 ml-4 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Nama bisnis atau lokasi"
+                    value={middleSearch}
+                    onChange={(e) => setMiddleSearch(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400 text-sm py-3 px-3"
+                  />
+                  <button type="submit" className="px-5 py-3 bg-[#008767] hover:bg-[#007458] text-white text-sm font-semibold shrink-0 transition-colors">
+                    Cari
+                  </button>
+                </form>
+              </div>
+
+              {/* Right: Business cards */}
+              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {sampleBusinesses.map((biz) => (
+                  <div key={biz.slug} className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                    {/* Photo placeholder */}
+                    <div className="h-28 bg-gradient-to-br from-emerald-100 to-slate-100 flex items-center justify-center text-3xl">
+                      {biz.category.includes("Kafe") ? "☕" : biz.category.includes("Klinik") ? "🏥" : "🔧"}
+                    </div>
+                    <div className="p-4 flex flex-col gap-2 flex-1">
+                      <div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold text-slate-900 text-sm leading-tight">{biz.name}</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#008767] shrink-0" />
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{biz.category}</p>
+                        <div className="flex items-center gap-1 text-[11px] text-amber-500 font-semibold mt-1">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          <span>{biz.rating}</span>
+                          <span className="text-slate-400 font-normal">({biz.reviews} ulasan)</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-slate-400 mt-0.5">
+                          <MapPin className="w-3 h-3" />
+                          <span>{biz.location}</span>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/business/${biz.slug}`}
+                        className="mt-auto block w-full text-center py-2 rounded-lg border border-[#008767] text-[#008767] hover:bg-[#008767] hover:text-white font-semibold text-xs transition-colors"
+                      >
+                        Lihat Profil
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ===== SECTION 4: DASHBOARD ===== */}
+        <section id="fitur" className="py-14 sm:py-20 bg-white border-b border-slate-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+
+              {/* Left */}
+              <div className="lg:col-span-5 space-y-5">
+                <p className="text-[11px] font-extrabold uppercase tracking-widest text-[#008767]">SETELAH BISNIS ANDA DIKLAIM</p>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+                  Satu Dashboard untuk Mengelola Profil & Reputasi Bisnis Anda.
+                </h2>
+                <p className="text-sm text-slate-500 leading-relaxed">
+                  Semua yang Anda butuhkan untuk menjaga reputasi bisnis, dalam satu tempat.
+                </p>
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:border-[#008767] hover:text-[#008767] font-semibold text-xs transition-colors"
+                >
+                  Lihat Contoh Dashboard <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+
+              {/* Right: Real dashboard image */}
+              <div className="lg:col-span-7 flex justify-center items-center">
+                <img
+                  src="/bisnis-dashboard.png"
+                  alt="Dashboard Katamereka untuk mengelola profil bisnis"
+                  className="w-full max-w-2xl h-auto object-contain drop-shadow-xl"
+                  loading="lazy"
+                />
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ===== SECTION 5: KENAPA HARUS CLAIM? ===== */}
+        <section className="py-14 sm:py-20 bg-slate-50 border-b border-slate-100">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+
+              {/* Left: 2 comparison boxes */}
+              <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Tanpa Claim */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+                  <h3 className="font-bold text-slate-700 text-sm flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">✕</span>
+                    Tanpa Claim
+                  </h3>
+                  <ul className="space-y-3">
+                    {[
+                      "Informasi bisnis terbatas",
+                      "Tidak bisa mengelola profil",
+                      "Tidak bisa merespon ulasan",
+                      "Tidak memiliki akses dashboard",
+                    ].map((t) => (
+                      <li key={t} className="flex items-start gap-2.5 text-xs text-slate-500 font-medium">
+                        <XCircle className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Setelah Claim */}
+                <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-6 space-y-4">
+                  <h3 className="font-bold text-[#008767] text-sm flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-[#008767] flex items-center justify-center text-white text-xs">✓</span>
+                    Setelah Claim
+                  </h3>
+                  <ul className="space-y-3">
+                    {[
+                      "Kelola informasi bisnis",
+                      "Kelola profil sendiri",
+                      "Tanggapi ulasan pelanggan",
+                      "Akses dashboard bisnis",
+                    ].map((t) => (
+                      <li key={t} className="flex items-start gap-2.5 text-xs text-slate-800 font-semibold">
+                        <CheckCircle2 className="w-4 h-4 text-[#008767] shrink-0 mt-0.5" />
+                        <span>{t}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Right: Heading */}
+              <div className="lg:col-span-4 space-y-3">
+                <p className="text-[11px] font-extrabold uppercase tracking-widest text-[#008767]">KENAPA HARUS CLAIM?</p>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
+                  Profil Anda Tetap Dapat Ditemukan. Tapi Setelah Diklaim, Anda Bisa Mengelolanya.
+                </h2>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
+        {/* ===== SECTION 6: BOTTOM CTA ===== */}
+        <section className="py-14 sm:py-24 bg-white">
+          <div className="max-w-2xl mx-auto px-4 text-center space-y-5">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+              Temukan & Klaim Bisnis Anda
             </h2>
-            <p className="text-base sm:text-lg text-emerald-100 max-w-2xl mx-auto font-medium">
-              Bergabunglah dengan ribuan pemilik usaha di Indonesia yang telah mempercayakan reputasi bisnisnya kepada Katamereka.
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Profil bisnis Anda mungkin sudah ada di Katamereka. Cari bisnis Anda dan mulai klaim secara gratis.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link
-                href="/signup?role=bisnis"
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white hover:bg-emerald-50 text-[#008767] font-extrabold text-base shadow-xl transition-all hover:scale-105"
-              >
-                Daftar Akun Bisnis Gratis
-              </Link>
-              <Link
-                href="/login?role=bisnis&redirect=/dashboard"
-                className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#005a44] hover:bg-[#004e3b] text-white font-extrabold text-base border border-emerald-400/40 transition-all"
-              >
-                Masuk ke Dashboard
-              </Link>
+            <form
+              onSubmit={(e) => handleSearchSubmit(bottomSearch, e)}
+              className="flex items-center bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden max-w-md mx-auto focus-within:ring-2 focus-within:ring-[#008767]/25 transition-all"
+            >
+              <Search className="w-4 h-4 text-slate-400 ml-4 shrink-0" />
+              <input
+                type="text"
+                placeholder="Nama bisnis atau lokasi"
+                value={bottomSearch}
+                onChange={(e) => setBottomSearch(e.target.value)}
+                className="flex-1 bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400 text-sm py-3 px-3"
+              />
+              <button type="submit" className="px-5 py-3 bg-[#008767] hover:bg-[#007458] text-white text-sm font-semibold shrink-0 transition-colors">
+                Cari
+              </button>
+            </form>
+            <div className="flex flex-wrap items-center justify-center gap-5 text-[11px] font-medium text-slate-500">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-[#008767]" />Gratis</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-[#008767]" />Proses verifikasi</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-[#008767]" />Tanpa kartu kredit</span>
             </div>
           </div>
         </section>
+
       </main>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-400 py-12 border-t border-slate-800 text-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#008767] flex items-center justify-center text-white font-bold text-xs">
-              K
+      <footer className="bg-white border-t border-slate-100 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full overflow-hidden bg-[#008767] shrink-0">
+                <img src="/logo.png" alt="Katamereka" className="w-full h-full object-cover" />
+              </div>
+              <span className="font-bold text-slate-900 text-base">Kata<span className="text-[#008767]">mereka</span></span>
+              <span className="text-[9px] font-extrabold bg-[#008767] text-white px-2 py-0.5 rounded-full uppercase tracking-wide">UNTUK BISNIS</span>
             </div>
-            <span className="text-sm font-bold text-white">
-              Kata<span className="text-[#008767]">mereka</span> <span className="text-xs font-normal text-slate-400">Untuk Bisnis</span>
-            </span>
+            <nav className="flex items-center flex-wrap justify-center gap-5 text-xs font-medium text-slate-500">
+              <a href="#cara-kerja" className="hover:text-[#008767] transition-colors">Cara Kerja</a>
+              <a href="#fitur" className="hover:text-[#008767] transition-colors">Fitur</a>
+              <Link href="/bantuan" className="hover:text-[#008767] transition-colors">Bantuan</Link>
+              <Link href="/login?role=bisnis" className="hover:text-[#008767] transition-colors">Masuk</Link>
+              <Link href="/signup?role=bisnis&claim=true" className="px-4 py-1.5 rounded-lg bg-[#008767] text-white font-semibold hover:bg-[#007458] transition-colors">
+                Klaim Bisnis Gratis
+              </Link>
+            </nav>
           </div>
-          <p>© {new Date().getFullYear()} Katamereka. Hak Cipta Dilindungi.</p>
-          <div className="flex items-center gap-6 text-slate-400">
-            <Link href="/tentang-kami" className="hover:text-white transition-colors">Tentang Kami</Link>
-            <Link href="/bantuan" className="hover:text-white transition-colors">Bantuan</Link>
-            <Link href="/" className="hover:text-white transition-colors">Halaman Utama</Link>
+          <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
+            <p>© 2025 Katamereka. Semua hak dilindungi.</p>
+            <div className="flex items-center gap-4">
+              <Link href="/bantuan" className="hover:text-slate-600 transition-colors">Kebijakan Privasi</Link>
+              <Link href="/bantuan" className="hover:text-slate-600 transition-colors">Syarat & Ketentuan</Link>
+            </div>
           </div>
         </div>
       </footer>
+
     </div>
   );
 }
