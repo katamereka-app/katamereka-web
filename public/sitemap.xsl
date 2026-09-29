@@ -138,52 +138,96 @@
     <p class="subtitle">XML Sitemap — generated dynamically from the businesses API</p>
   </header>
   <main>
-    <div class="card">
-      <div class="card-header">
-        <h1>Daftar URL</h1>
-        <span class="badge">
-          <xsl:value-of select="count(//sm:url)"/> URL terdaftar
-        </span>
-      </div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width:55%">URL</th>
-            <th>Last Modified</th>
-            <th>Change Freq</th>
-            <th>Priority</th>
-          </tr>
-        </thead>
-        <tbody>
-          <xsl:for-each select="//sm:url">
-            <tr>
-              <td>
-                <a class="loc" href="{sm:loc}" target="_blank" rel="noopener">
-                  <xsl:value-of select="sm:loc"/>
-                </a>
-              </td>
-              <td class="muted">
-                <xsl:choose>
-                  <xsl:when test="sm:lastmod">
-                    <xsl:value-of select="sm:lastmod"/>
-                  </xsl:when>
-                  <xsl:otherwise>—</xsl:otherwise>
-                </xsl:choose>
-              </td>
-              <td>
-                <xsl:if test="sm:changefreq">
-                  <span class="pill"><xsl:value-of select="sm:changefreq"/></span>
-                </xsl:if>
-              </td>
-              <td class="muted">
-                <xsl:value-of select="sm:priority"/>
-              </td>
-            </tr>
-          </xsl:for-each>
-        </tbody>
-      </table>
-    </div>
-    <footer>Dibuat otomatis oleh katamereka-web · disajikan lewat /sitemap.xml</footer>
+    <xsl:choose>
+      <!-- Sitemap index: one row per section, linking to its own child sitemap -->
+      <xsl:when test="sm:sitemapindex">
+        <div class="card">
+          <div class="card-header">
+            <h1>Bagian Sitemap</h1>
+            <span class="badge">
+              <xsl:value-of select="count(//sm:sitemap)"/> bagian
+            </span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:70%">Sitemap</th>
+                <th>Last Modified</th>
+              </tr>
+            </thead>
+            <tbody>
+              <xsl:for-each select="//sm:sitemap">
+                <tr>
+                  <td>
+                    <a class="loc" href="{sm:loc}">
+                      <xsl:value-of select="sm:loc"/>
+                    </a>
+                  </td>
+                  <td class="muted">
+                    <xsl:choose>
+                      <xsl:when test="sm:lastmod">
+                        <xsl:value-of select="sm:lastmod"/>
+                      </xsl:when>
+                      <xsl:otherwise>—</xsl:otherwise>
+                    </xsl:choose>
+                  </td>
+                </tr>
+              </xsl:for-each>
+            </tbody>
+          </table>
+        </div>
+        <footer>Dibuat otomatis oleh katamereka-web · sitemap index, klik tiap baris buat lihat isinya</footer>
+      </xsl:when>
+      <!-- Regular urlset: the actual page entries for one section -->
+      <xsl:otherwise>
+        <div class="card">
+          <div class="card-header">
+            <h1>Daftar URL</h1>
+            <span class="badge">
+              <xsl:value-of select="count(//sm:url)"/> URL terdaftar
+            </span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:55%">URL</th>
+                <th>Last Modified</th>
+                <th>Change Freq</th>
+                <th>Priority</th>
+              </tr>
+            </thead>
+            <tbody>
+              <xsl:for-each select="//sm:url">
+                <tr>
+                  <td>
+                    <a class="loc" href="{sm:loc}" target="_blank" rel="noopener">
+                      <xsl:value-of select="sm:loc"/>
+                    </a>
+                  </td>
+                  <td class="muted">
+                    <xsl:choose>
+                      <xsl:when test="sm:lastmod">
+                        <xsl:value-of select="sm:lastmod"/>
+                      </xsl:when>
+                      <xsl:otherwise>—</xsl:otherwise>
+                    </xsl:choose>
+                  </td>
+                  <td>
+                    <xsl:if test="sm:changefreq">
+                      <span class="pill"><xsl:value-of select="sm:changefreq"/></span>
+                    </xsl:if>
+                  </td>
+                  <td class="muted">
+                    <xsl:value-of select="sm:priority"/>
+                  </td>
+                </tr>
+              </xsl:for-each>
+            </tbody>
+          </table>
+        </div>
+        <footer>Dibuat otomatis oleh katamereka-web · <a href="/sitemap.xml" style="color:inherit">kembali ke sitemap index</a></footer>
+      </xsl:otherwise>
+    </xsl:choose>
   </main>
 </body>
 </html>
