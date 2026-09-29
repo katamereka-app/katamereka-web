@@ -808,7 +808,21 @@ export async function rejectBusinessClaim(
  * UI Adapter to convert ApiBusinessListItem to UI Business Model
  */
 export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
-  const ratingNum = typeof item.rating === "number" ? item.rating : parseFloat(item.rating) || 4.5;
+  let parsedRating = typeof item.rating === "number"
+    ? item.rating
+    : parseFloat(String(item.rating || ""));
+  if (isNaN(parsedRating)) parsedRating = 0;
+
+  let reviewsCountVal = typeof item.reviews_count === "number"
+    ? item.reviews_count
+    : (parseInt(String(item.reviews_count || 0), 10) || 0);
+
+  // Sanitize legacy sync fallback defaults (4.5 rating and 12 reviews)
+  if (parsedRating === 4.5 && reviewsCountVal === 12) {
+    parsedRating = 0;
+    reviewsCountVal = 0;
+  }
+
   const initials = item.name
     .split(" ")
     .map((w) => w[0])
@@ -829,13 +843,13 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
     slug: item.slug,
     name: item.name,
     category: formattedCategory,
-    location: item.city ? `${item.city}, ${item.province || ""}`.trim() : item.address || "-",
+    location: item.city ? `${item.city}${item.province ? `, ${item.province}` : ""}`.trim() : item.address || "-",
     address: item.address || "-",
-    rating: ratingNum,
-    reviewCount: item.reviews_count || 0,
-    reviewCountFormatted: item.reviews_count ? `${item.reviews_count} ulasan` : "0 ulasan",
+    rating: parsedRating > 0 ? Number(parsedRating.toFixed(1)) : 0,
+    reviewCount: reviewsCountVal,
+    reviewCountFormatted: `${reviewsCountVal} ulasan`,
     description: "-",
-    badge: ratingNum >= 4.5 ? "Terverifikasi" : "Pilihan Pengguna",
+    badge: parsedRating >= 4.5 ? "Terverifikasi" : "Pilihan Pengguna",
     initials,
     color: "bg-emerald-100 text-emerald-900 border-emerald-200",
     features: [],

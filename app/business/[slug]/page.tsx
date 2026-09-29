@@ -143,7 +143,7 @@ export default function BusinessProfilePage() {
         .toUpperCase()
     : "KM";
 
-  const ratingVal = apiDetail?.rating
+  let ratingVal = apiDetail?.rating
     ? typeof apiDetail.rating === "number"
       ? apiDetail.rating
       : parseFloat(apiDetail.rating)
@@ -153,8 +153,14 @@ export default function BusinessProfilePage() {
       : parseFloat(apiDetail.externalRating)
     : 0;
 
-  const reviewCountVal = apiDetail?.reviews_count ?? apiDetail?.externalReviewsCount ?? 0;
-  const ratingFormatted = ratingVal > 0 ? ratingVal.toFixed(1) : "-";
+  let reviewCountVal = apiDetail?.reviews_count ?? apiDetail?.externalReviewsCount ?? 0;
+
+  if (ratingVal === 4.5 && reviewCountVal === 12) {
+    ratingVal = 0;
+    reviewCountVal = 0;
+  }
+
+  const ratingFormatted = ratingVal > 0 ? ratingVal.toFixed(1) : "0";
   const reviewCountFormatted = `${reviewCountVal} ulasan`;
 
   let formattedCategory = apiDetail?.category || "-";
