@@ -237,7 +237,10 @@ function LoginFormContent() {
           <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500 space-y-2.5">
             <div>
               <span>Belum punya akun? </span>
-              <Link href="/signup" className="font-bold text-[#008767] hover:underline">
+              <Link
+                href={roleParam === "bisnis" ? "/signup?role=bisnis" : "/signup"}
+                className="font-bold text-[#008767] hover:underline"
+              >
                 Daftar sekarang
               </Link>
             </div>

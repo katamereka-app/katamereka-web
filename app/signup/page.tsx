@@ -256,37 +256,13 @@ function SignupFormContent() {
                 {/* Title & Subtitle */}
                 <div className="space-y-0.5">
                   <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Buat Akun Baru
+                    {role === "bisnis" ? "Buat Akun Bisnis" : "Buat Akun Baru"}
                   </h1>
                   <p className="text-xs text-slate-500">
-                    Isi data di bawah ini untuk mulai menggunakan Katamereka.
+                    {role === "bisnis"
+                      ? "Isi data di bawah ini untuk mendaftarkan akun pemilik bisnis Katamereka."
+                      : "Isi data di bawah ini untuk mulai menggunakan Katamereka."}
                   </p>
-                </div>
-
-                {/* Role Switcher Tab (Customer / Bisnis) */}
-                <div className="flex items-center p-1 bg-slate-100 rounded-full text-xs font-semibold">
-                  <button
-                    type="button"
-                    onClick={() => setRole("customer")}
-                    className={`flex-1 py-1.5 px-3 rounded-full transition-all text-center ${
-                      role === "customer"
-                        ? "bg-[#008767] text-white shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Customer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole("bisnis")}
-                    className={`flex-1 py-1.5 px-3 rounded-full transition-all text-center ${
-                      role === "bisnis"
-                        ? "bg-[#008767] text-white shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Akun Bisnis
-                  </button>
                 </div>
 
                 <form onSubmit={handleProceedToOtp} className="space-y-3">
@@ -463,7 +439,10 @@ function SignupFormContent() {
           {/* Footer Link */}
           <div className="pt-3 border-t border-slate-100 text-center text-xs text-slate-500">
             <span>Sudah punya akun? </span>
-            <Link href="/login" className="font-bold text-[#008767] hover:underline">
+            <Link
+              href={role === "bisnis" ? "/login?role=bisnis" : "/login"}
+              className="font-bold text-[#008767] hover:underline"
+            >
               Masuk di sini
             </Link>
           </div>
