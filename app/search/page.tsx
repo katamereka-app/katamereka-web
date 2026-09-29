@@ -23,8 +23,7 @@ import {
   Globe,
   X,
   ArrowUp,
-  MessageSquare,
-  AppWindow
+  MessageSquare
 } from "lucide-react";
 
 // Additional search mock items matching user request & screenshot
@@ -485,7 +484,7 @@ function SearchContent() {
       <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 text-slate-600 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
-            <div className="lg:col-span-4 space-y-4">
+            <div className="lg:col-span-6 space-y-4">
               <Link href="/" className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#008767] flex items-center justify-center text-white">
                   <MessageSquare className="w-4 h-4 fill-white/20" />
@@ -499,7 +498,7 @@ function SearchContent() {
               </p>
             </div>
 
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-3 space-y-3">
               <h4 className="font-bold text-slate-900 text-sm">Tautan Cepat</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
                 <li><Link href="/" className="hover:text-[#008767]">Beranda</Link></li>
@@ -515,19 +514,6 @@ function SearchContent() {
                 <li><Link href="/businesses" className="hover:text-[#008767]">Restoran & Kuliner</Link></li>
                 <li><Link href="/businesses" className="hover:text-[#008767]">Hotel & Penginapan</Link></li>
               </ul>
-            </div>
-
-            <div className="lg:col-span-3 space-y-3">
-              <h4 className="font-bold text-slate-900 text-sm">Download Aplikasi</h4>
-              <div className="space-y-2">
-                <div className="px-3.5 py-2 rounded-xl bg-slate-900 text-white flex items-center gap-2.5 cursor-pointer">
-                  <AppWindow className="w-5 h-5 text-white" />
-                  <div>
-                    <p className="text-[10px] text-slate-300 leading-none">Download on the</p>
-                    <p className="text-xs font-semibold leading-tight mt-0.5">App Store</p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
