@@ -511,6 +511,42 @@ export async function registerUserApi(payload: {
 }
 
 /**
+ * POST /auth/send-otp
+ * Sends a 6-digit OTP to the given email (valid for 10 minutes).
+ */
+export type OtpType = "REGISTRATION" | "FORGOT_PASSWORD";
+
+export async function sendOtpApi(payload: {
+  email: string;
+  type: OtpType;
+}): Promise<{ success: boolean; message: string }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/send-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: payload.email.trim().toLowerCase(),
+        type: payload.type,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    const message = Array.isArray(data.message)
+      ? data.message.join(". ")
+      : data.message
+        ? String(data.message)
+        : "";
+
+    if (!res.ok) {
+      return { success: false, message: message || "Gagal mengirim kode OTP" };
+    }
+    return { success: true, message: message || "Kode OTP berhasil dikirim" };
+  } catch (e) {
+    return { success: false, message: "Gagal terhubung ke server. Silakan coba lagi." };
+  }
+}
+
+/**
  * 5. POST /auth/login
  */
 export async function loginUserApi(payload: {

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, Suspense } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, UserRole } from "@/lib/auth-context";
+import { sendOtpApi } from "@/lib/api-client";
 import {
   User,
   Mail,
@@ -35,7 +36,7 @@ function SignupFormContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   
   // 6-digit OTP state boxes
-  const [otpDigits, setOtpDigits] = useState<string[]>(["1", "2", "3", "4", "5", "6"]);
+  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +46,15 @@ function SignupFormContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Countdown before "Kirim Ulang OTP" can be pressed again
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   // Handler for OTP input box change
   const handleOtpChange = (index: number, value: string) => {
@@ -85,7 +95,7 @@ function SignupFormContent() {
   };
 
   // Step 1 Form Submission (Proceed to OTP Step)
-  const handleProceedToOtp = (e: React.FormEvent) => {
+  const handleProceedToOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -109,9 +119,21 @@ function SignupFormContent() {
       return;
     }
 
-    // Proceed to Step 2: OTP Verification Card Slide
+    // Request OTP to the email, then proceed to Step 2: OTP Verification Card Slide
+    setIsSendingOtp(true);
+    const res = await sendOtpApi({ email, type: "REGISTRATION" });
+    setIsSendingOtp(false);
+
+    if (!res.success) {
+      setError(res.message);
+      return;
+    }
+
     setError("");
+    setOtpDigits(["", "", "", "", "", ""]);
+    setResendCooldown(60);
     setStep("otp");
+    setTimeout(() => otpRefs.current[0]?.focus(), 50);
   };
 
   // Step 2 Final Submission (Verify OTP & Register)
@@ -141,9 +163,23 @@ function SignupFormContent() {
   };
 
   // Resend OTP code handler
-  const handleResendOtp = () => {
-    setResendMessage("Kode OTP baru telah dikirim kembali (Default: 123456).");
-    setOtpDigits(["1", "2", "3", "4", "5", "6"]);
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isSendingOtp) return;
+    setError("");
+
+    setIsSendingOtp(true);
+    const res = await sendOtpApi({ email, type: "REGISTRATION" });
+    setIsSendingOtp(false);
+
+    if (!res.success) {
+      setError(res.message);
+      return;
+    }
+
+    setResendMessage("Kode OTP baru telah dikirim ke email Anda.");
+    setOtpDigits(["", "", "", "", "", ""]);
+    setResendCooldown(60);
+    otpRefs.current[0]?.focus();
     setTimeout(() => {
       setResendMessage("");
     }, 4000);
@@ -348,10 +384,17 @@ function SignupFormContent() {
                   {/* Step 1 Submit Button */}
                   <button
                     type="submit"
-                    className="w-full py-3 rounded-full bg-[#008767] hover:bg-[#007055] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-[#008767]/25 active:scale-95 mt-2 cursor-pointer"
+                    disabled={isSendingOtp}
+                    className="w-full py-3 rounded-full bg-[#008767] hover:bg-[#007055] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-[#008767]/25 active:scale-95 disabled:opacity-70 mt-2 cursor-pointer"
                   >
-                    <span>Daftar Sebagai {role === "bisnis" ? "Pemilik Bisnis" : "Customer"}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    {isSendingOtp ? (
+                      <span>Mengirim Kode OTP...</span>
+                    ) : (
+                      <>
+                        <span>Daftar Sebagai {role === "bisnis" ? "Pemilik Bisnis" : "Customer"}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
 
                 </form>
@@ -406,10 +449,17 @@ function SignupFormContent() {
                     <button
                       type="button"
                       onClick={handleResendOtp}
-                      className="inline-flex items-center gap-1.5 font-bold text-[#008767] hover:underline cursor-pointer"
+                      disabled={resendCooldown > 0 || isSendingOtp}
+                      className="inline-flex items-center gap-1.5 font-bold text-[#008767] hover:underline cursor-pointer disabled:text-slate-400 disabled:no-underline disabled:cursor-not-allowed"
                     >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Kirim Ulang OTP</span>
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSendingOtp ? "animate-spin" : ""}`} />
+                      <span>
+                        {isSendingOtp
+                          ? "Mengirim..."
+                          : resendCooldown > 0
+                            ? `Kirim Ulang (${resendCooldown}s)`
+                            : "Kirim Ulang OTP"}
+                      </span>
                     </button>
                   </div>
 
