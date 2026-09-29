@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
-import { businesses, Business } from "@/lib/mock-data";
+import { Business } from "@/lib/mock-data";
 import { fetchBusinesses, mapApiBusinessToUiModel } from "@/lib/api-client";
 import {
   Search,

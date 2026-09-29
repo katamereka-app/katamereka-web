@@ -4,7 +4,6 @@ import { Suspense, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/navbar";
-import { businesses, Business } from "@/lib/mock-data";
 import { fetchBusinesses, mapApiBusinessToUiModel } from "@/lib/api-client";
 import {
   Search,
@@ -26,73 +25,6 @@ import {
   MessageSquare
 } from "lucide-react";
 
-// Additional search mock items matching user request & screenshot
-const searchMockBusinesses = [
-  {
-    id: "s1",
-    slug: "combined-insurance-canada",
-    name: "Combined Insurance (Canada)",
-    website: "combinedinsurance.com/ca-en",
-    category: "Asuransi",
-    location: "Canada",
-    rating: 4.9,
-    reviewCount: 2570,
-    reviewCountFormatted: "2.570 ulasan",
-    badge: "Terverifikasi" as const,
-    initials: "CO",
-    color: "bg-slate-900 text-white",
-    type: "Bisnis",
-    bannerUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=500&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "s2",
-    slug: "combined-insurance-us",
-    name: "Combined Insurance (US)",
-    website: "combinedinsurance.com",
-    category: "Asuransi",
-    location: "United States",
-    rating: 4.7,
-    reviewCount: 1851,
-    reviewCountFormatted: "1.851 ulasan",
-    badge: "Terverifikasi" as const,
-    initials: "CO",
-    color: "bg-teal-700 text-white",
-    type: "Bisnis",
-    bannerUrl: "https://images.unsplash.com/photo-1554469384-e58fac16e23a?w=500&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "s3",
-    slug: "alps-insurance",
-    name: "ALPS",
-    website: "alpsinsurance.com",
-    category: "Asuransi",
-    location: "111 N. Higgins Ave., Suite 600, Missoula, United States",
-    rating: 4.9,
-    reviewCount: 3783,
-    reviewCountFormatted: "3.783 ulasan",
-    badge: "Terverifikasi" as const,
-    initials: "ALPS",
-    color: "bg-rose-700 text-white",
-    type: "Produk",
-    bannerUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=500&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "s4",
-    slug: "american-collectors-insurance",
-    name: "American Collectors Insurance",
-    website: "americancollectors.com",
-    category: "Asuransi",
-    location: "250 Century Parkway Suite 425, Mount Laurel, United States",
-    rating: 4.9,
-    reviewCount: 22015,
-    reviewCountFormatted: "22.015 ulasan",
-    badge: "Terverifikasi" as const,
-    initials: "ACI",
-    color: "bg-blue-900 text-white",
-    type: "Tempat",
-    bannerUrl: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=500&auto=format&fit=crop&q=80"
-  }
-];
 
 function SearchContent() {
   const router = useRouter();
@@ -157,32 +89,9 @@ function SearchContent() {
     setBookmarks((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Combine mock data with search mock data & live API items (deduplicated by slug)
+  // Combine: only real API items (no mock data)
   const allSearchItems = useMemo(() => {
-    const defaultMapped = businesses.map((b) => ({
-      id: b.id,
-      slug: b.slug,
-      name: b.name,
-      website: `${b.slug}.com`,
-      category: b.category,
-      location: b.location,
-      rating: b.rating,
-      reviewCount: b.reviewCount,
-      reviewCountFormatted: b.reviewCountFormatted,
-      badge: b.badge || ("Terverifikasi" as const),
-      initials: b.initials,
-      color: b.color,
-      type: b.category.includes("Restoran") || b.category.includes("Kafe") ? "Jasa" : "Bisnis",
-      bannerUrl: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=80"
-    }));
-
-    const pool = [...apiItems, ...searchMockBusinesses, ...defaultMapped];
-    const seen = new Set();
-    return pool.filter((item) => {
-      if (seen.has(item.slug)) return false;
-      seen.add(item.slug);
-      return true;
-    });
+    return [...apiItems];
   }, [apiItems]);
 
   // Filter items
@@ -365,13 +274,19 @@ function SearchContent() {
 
                         {/* Rating Stars & Count */}
                         <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                          <div className="flex text-amber-400 text-sm">
-                            {"★".repeat(Math.floor(item.rating))}
-                          </div>
-                          <span>{item.rating}</span>
-                          <span className="text-slate-400 font-normal">
-                            ({item.reviewCountFormatted})
-                          </span>
+                          {item.rating > 0 ? (
+                            <>
+                              <div className="flex text-amber-400 text-sm">
+                                {"★".repeat(Math.min(Math.floor(item.rating), 5))}
+                              </div>
+                              <span>{item.rating}</span>
+                              <span className="text-slate-400 font-normal">
+                                ({item.reviewCountFormatted})
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-slate-400 font-normal">0 ulasan</span>
+                          )}
                         </div>
 
                         {/* Location */}

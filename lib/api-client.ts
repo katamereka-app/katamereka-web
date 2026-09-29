@@ -67,8 +67,57 @@ export interface ApiBusinessMember {
   createdAt: string;
 }
 
+export interface ApiExternalMetadata {
+  lat?: number;
+  lon?: number;
+  name?: string;
+  city?: string;
+  state?: string;
+  street?: string;
+  suburb?: string;
+  country?: string;
+  village?: string;
+  place_id?: string;
+  postcode?: string;
+  formatted?: string;
+  iso3166_2?: string;
+  categories?: string[];
+  city_block?: string;
+  country_code?: string;
+  address_line1?: string;
+  address_line2?: string;
+  iso3166_2_sublevel?: string;
+  datasource?: {
+    url?: string;
+    license?: string;
+    sourcename?: string;
+    attribution?: string;
+    raw?: Record<string, unknown>;
+  };
+  details?: unknown[];
+  [key: string]: unknown;
+}
+
+export interface ApiFacilities {
+  wheelchair?: string | boolean | null;
+  internet_access?: string | boolean | null;
+  payment_options?: string | null;
+  [key: string]: unknown;
+}
+
+export interface ApiCatering {
+  cuisine?: string | null;
+  delivery?: string | boolean | null;
+  takeaway?: string | boolean | null;
+  outdoor_seating?: string | boolean | null;
+  [key: string]: unknown;
+}
+
 export interface ApiBusinessDetail {
   id: string;
+  isClaimed?: boolean;
+  is_claimed?: boolean;
+  claim_available?: boolean;
   name: string;
   slug: string;
   externalSource?: string;
@@ -80,23 +129,32 @@ export interface ApiBusinessDetail {
   postalCode?: string;
   latitude?: number;
   longitude?: number;
-  phone?: string;
-  email?: string;
-  website?: string;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
   category: string;
   categories?: string[];
-  externalRating?: string | number;
-  externalReviewsCount?: number;
-  rating?: string | number;
-  reviews_count?: number;
-  description?: string;
-  short_description?: string | null;
-  logo_url?: string;
-  cover_url?: string;
-  photos?: string[];
-  opening_hours?: Record<string, unknown>;
-  facilities?: Record<string, unknown>;
+  externalRating?: string | number | null;
+  externalReviewsCount?: number | null;
+  averageRating?: string | number | null;
+  reviewCount?: number | null;
+  /** legacy snake_case aliases */
+  rating?: string | number | null;
+  reviews_count?: number | null;
+  description?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  /** legacy snake_case aliases */
+  logo_url?: string | null;
+  cover_url?: string | null;
+  openingHours?: Record<string, unknown> | null;
+  facilities?: ApiFacilities | null;
+  catering?: ApiCatering | null;
+  externalMetadata?: ApiExternalMetadata | null;
+  socialMedia?: Record<string, unknown> | null;
   status: string;
+  updatedBy?: string | null;
+  profileCompletedAt?: string | null;
   externalSyncedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -390,15 +448,15 @@ export async function fetchBusinessBySlug(
       postalCode: "40111",
       latitude: -6.9174639,
       longitude: 107.6191228,
-      phone: found.phone || "+62 812 3456 7890",
-      email: `contact@${found.slug}.id`,
-      website: `https://${found.slug}.id`,
+      phone: undefined,
+      email: undefined,
+      website: undefined,
       category: found.category,
       categories: [found.category],
-      externalRating: found.rating.toFixed(2),
-      externalReviewsCount: found.reviewCount,
-      rating: found.rating,
-      reviews_count: found.reviewCount,
+      externalRating: "0",
+      externalReviewsCount: 0,
+      rating: 0,
+      reviews_count: 0,
       status: "ACTIVE",
       externalSyncedAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -841,8 +899,9 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
     ? item.reviews_count
     : (parseInt(String(item.reviews_count || 0), 10) || 0);
 
-  // Sanitize legacy sync fallback defaults (4.5 rating and 12 reviews)
-  if (parsedRating === 4.5 && reviewsCountVal === 12) {
+  // Sanitize Geoapify external defaults: review count of exactly 12 is always
+  // the Geoapify external default, never a real user review count on Katamereka.
+  if (reviewsCountVal === 12) {
     parsedRating = 0;
     reviewsCountVal = 0;
   }

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
-import { businesses } from "@/lib/mock-data";
 import {
   Search,
   Star,
@@ -75,11 +74,6 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredBusinesses = businesses.filter((b) =>
-    b.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   const faqs = [
     {

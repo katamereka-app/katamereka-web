@@ -153,19 +153,22 @@ export default function BusinessProfilePage() {
         .toUpperCase()
     : "KM";
 
-  let ratingVal = apiDetail?.rating
-    ? typeof apiDetail.rating === "number"
-      ? apiDetail.rating
-      : parseFloat(apiDetail.rating)
-    : apiDetail?.externalRating
-    ? typeof apiDetail.externalRating === "number"
-      ? apiDetail.externalRating
-      : parseFloat(apiDetail.externalRating)
-    : 0;
+  // Priority: averageRating (real Katamereka reviews) > rating (legacy)
+  // NOTE: externalRating is Geoapify external metadata — never shown to users
+  let ratingVal = (() => {
+    const r = apiDetail?.averageRating ?? apiDetail?.rating ?? null;
+    if (r === null || r === undefined) return 0;
+    const parsed = typeof r === "number" ? r : parseFloat(String(r));
+    return isNaN(parsed) ? 0 : parsed;
+  })();
 
-  let reviewCountVal = apiDetail?.reviews_count ?? apiDetail?.externalReviewsCount ?? 0;
+  // Priority: reviewCount (real API) > reviews_count (legacy) > externalReviewsCount
+  let reviewCountVal =
+    apiDetail?.reviewCount ?? apiDetail?.reviews_count ?? apiDetail?.externalReviewsCount ?? 0;
+  if (typeof reviewCountVal !== "number" || isNaN(reviewCountVal)) reviewCountVal = 0;
 
-  if (ratingVal === 4.5 && reviewCountVal === 12) {
+  // Sanitize Geoapify external defaults (reviews_count of 12 = no real reviews)
+  if (reviewCountVal === 12) {
     ratingVal = 0;
     reviewCountVal = 0;
   }
@@ -185,9 +188,41 @@ export default function BusinessProfilePage() {
     formattedCategory = formattedCategory.replace(/^(service|building)\./, "").replace(/_/g, " ");
   }
 
-  const locationStr = apiDetail?.city
-    ? `${apiDetail.city}${apiDetail.province ? `, ${apiDetail.province}` : ""}`
-    : apiDetail?.address || "-";
+  const cleanValue = (val?: string | null) => {
+    if (!val || val === "-" || val === "null" || val === "undefined" || val === "none" || val.trim() === "") {
+      return "-";
+    }
+    return val.trim();
+  };
+
+  const phoneStr = cleanValue(apiDetail?.phone);
+  const emailStr = cleanValue(apiDetail?.email);
+  const websiteStr = cleanValue(apiDetail?.website);
+
+  // For address: prefer externalMetadata.address_line2 (full street) > externalMetadata.formatted > address field
+  const metaAddressLine2 = cleanValue(apiDetail?.externalMetadata?.address_line2);
+  const metaFormatted = cleanValue(apiDetail?.externalMetadata?.formatted);
+  const rawAddress = cleanValue(apiDetail?.address);
+  // If the address field is just the business name (same as name), use metadata
+  const addressIsSameasName =
+    apiDetail?.address && apiDetail?.name &&
+    apiDetail.address.trim().toLowerCase() === apiDetail.name.trim().toLowerCase();
+  const addressStr = addressIsSameasName
+    ? (metaAddressLine2 !== "-" ? metaAddressLine2 : metaFormatted !== "-" ? metaFormatted : rawAddress)
+    : rawAddress;
+
+  const cityStr = cleanValue(apiDetail?.city);
+  const provinceStr = cleanValue(apiDetail?.province);
+
+  const locationStr = cityStr !== "-"
+    ? `${cityStr}${provinceStr !== "-" ? `, ${provinceStr}` : ""}`
+    : addressStr;
+
+  const displayLocation = addressStr !== "-" ? addressStr : locationStr;
+
+  // Logo & cover: prefer camelCase (real API) > snake_case (legacy)
+  const logoUrl = apiDetail?.logoUrl ?? apiDetail?.logo_url ?? null;
+  const coverUrl = apiDetail?.coverUrl ?? apiDetail?.cover_url ?? null;
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -236,10 +271,10 @@ export default function BusinessProfilePage() {
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
           {/* Clean Dynamic Cover Banner */}
           <div className="h-44 sm:h-56 bg-gradient-to-r from-emerald-100 via-[#e0f4ee] to-teal-100/70 relative overflow-hidden flex items-center justify-center">
-            {apiDetail?.cover_url ? (
+            {coverUrl ? (
               <img
-                src={apiDetail.cover_url}
-                alt={apiDetail.name}
+                src={coverUrl}
+                alt={apiDetail?.name}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -255,10 +290,10 @@ export default function BusinessProfilePage() {
               <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5">
                 {/* Logo Box */}
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl shadow-lg border-4 border-white flex items-center justify-center font-bold text-2xl sm:text-3xl bg-[#008767] text-white overflow-hidden shrink-0">
-                  {apiDetail?.logo_url ? (
+                  {logoUrl ? (
                     <img
-                      src={apiDetail.logo_url}
-                      alt={apiDetail.name}
+                      src={logoUrl}
+                      alt={apiDetail?.name}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -472,27 +507,27 @@ export default function BusinessProfilePage() {
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 text-xs">
                     <div>
                       <p className="font-bold text-slate-900">Alamat Lengkap:</p>
-                      <p className="text-slate-600 mt-0.5">{apiDetail?.address || "-"}</p>
+                      <p className="text-slate-600 mt-0.5">{addressStr}</p>
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">Kota / Kabupaten:</p>
-                      <p className="text-slate-600 mt-0.5">{apiDetail?.city || "-"}</p>
+                      <p className="text-slate-600 mt-0.5">{cityStr}</p>
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">Provinsi:</p>
-                      <p className="text-slate-600 mt-0.5">{apiDetail?.province || "-"}</p>
+                      <p className="text-slate-600 mt-0.5">{provinceStr}</p>
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">Nomor Telepon / Kontak:</p>
-                      <p className="text-slate-600 mt-0.5">{apiDetail?.phone || "-"}</p>
+                      <p className="text-slate-600 mt-0.5">{phoneStr}</p>
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">Email:</p>
-                      <p className="text-slate-600 mt-0.5">{apiDetail?.email || "-"}</p>
+                      <p className="text-slate-600 mt-0.5">{emailStr}</p>
                     </div>
                     <div>
                       <p className="font-bold text-slate-900">Website:</p>
-                      <p className="text-slate-600 mt-0.5">{apiDetail?.website || "-"}</p>
+                      <p className="text-slate-600 mt-0.5">{websiteStr}</p>
                     </div>
                   </div>
                 </div>
@@ -528,12 +563,12 @@ export default function BusinessProfilePage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-3 text-slate-700 min-w-0">
                     <Phone className="w-4 h-4 text-[#008767] flex-shrink-0" />
-                    {apiDetail?.phone && apiDetail.phone !== "-" ? (
+                    {phoneStr !== "-" ? (
                       <a
-                        href={`tel:${apiDetail.phone}`}
+                        href={`tel:${phoneStr}`}
                         className="truncate font-medium text-slate-800 hover:text-[#008767] hover:underline"
                       >
-                        {apiDetail.phone}
+                        {phoneStr}
                       </a>
                     ) : (
                       <span className="text-slate-400 font-medium">-</span>
@@ -545,14 +580,14 @@ export default function BusinessProfilePage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 text-slate-700 min-w-0">
                     <MapPin className="w-4 h-4 text-[#008767] flex-shrink-0 mt-0.5" />
-                    {apiDetail?.address || (locationStr && locationStr !== "-") ? (
+                    {addressStr !== "-" || displayLocation !== "-" ? (
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(apiDetail?.address || locationStr)}`}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressStr !== "-" ? addressStr : displayLocation)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="leading-snug font-medium text-slate-800 hover:text-[#008767] hover:underline"
                       >
-                        {apiDetail?.address || locationStr}
+                        {addressStr !== "-" ? addressStr : displayLocation}
                       </a>
                     ) : (
                       <span className="text-slate-400 font-medium">-</span>
@@ -564,10 +599,10 @@ export default function BusinessProfilePage() {
                 <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
                   <div className="flex items-center gap-3 text-slate-700 min-w-0 flex-1">
                     <Globe className="w-4 h-4 text-[#008767] flex-shrink-0" />
-                    {apiDetail?.website && apiDetail.website !== "-" ? (
+                    {websiteStr !== "-" ? (
                       <div className="flex items-center gap-2 flex-wrap">
                         <a
-                          href={apiDetail.website.startsWith("http") ? apiDetail.website : `https://${apiDetail.website}`}
+                          href={websiteStr.startsWith("http") ? websiteStr : `https://${websiteStr}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-[#008767] font-bold text-xs border border-emerald-200 hover:bg-[#008767] hover:text-white transition-all shadow-2xs group"
@@ -578,8 +613,8 @@ export default function BusinessProfilePage() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (apiDetail?.website && navigator.clipboard) {
-                              const webUrl = apiDetail.website.startsWith("http") ? apiDetail.website : `https://${apiDetail.website}`;
+                            if (websiteStr !== "-" && navigator.clipboard) {
+                              const webUrl = websiteStr.startsWith("http") ? websiteStr : `https://${websiteStr}`;
                               navigator.clipboard.writeText(webUrl);
                               alert("Link website berhasil disalin ke clipboard!");
                             }
