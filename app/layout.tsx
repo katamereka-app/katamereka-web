@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { CONSUMER_SITE_URL } from "@/lib/site-config";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -21,8 +22,12 @@ const gabarito = Gabarito({
 });
 
 export const metadata: Metadata = {
-  title: "Katamereka — Platform Ulasan & Rekomendasi Bisnis Terpercaya",
-  description: "Dengar kata mereka sebelum memilih. Temukan ulasan terpercaya, produk terbaik, dan layanan yang sesuai dengan kebutuhanmu.",
+  metadataBase: new URL(CONSUMER_SITE_URL),
+  title: "Katamereka — Dengarkan Ulasan Sebelum Memilih Bisnis",
+  description: "Temukan bisnis terpercaya berdasarkan pengalaman nyata pelanggan.",
+  alternates: {
+    canonical: "/",
+  },
   icons: {
     icon: "/logo.png",
     shortcut: "/logo.png",

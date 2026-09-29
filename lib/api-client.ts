@@ -11,6 +11,8 @@
  */
 
 import { Business, businesses as mockBusinesses } from "./mock-data";
+import { categories as mockCategories } from "./mock/categories";
+import { cities as mockCities } from "./mock/cities";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
@@ -240,6 +242,90 @@ export async function fetchAllBusinessesForSitemap(): Promise<
   }
 
   return all.filter((b) => !b.status || PUBLIC_STATUSES.has(b.status));
+}
+
+export interface ApiSitemapBusinessItem {
+  slug: string;
+  updated_at?: string;
+}
+
+export interface ApiCategoryFacet {
+  category: string;
+  count: number;
+}
+
+export interface ApiCityFacet {
+  city: string;
+  count: number;
+}
+
+/**
+ * GET /businesses/sitemap — lightweight {slug, updated_at} feed of every
+ * public business, purpose-built for the sitemap generator. Falls back to
+ * the older paginated fetchAllBusinessesForSitemap() (and then to []) so a
+ * missing/older backend never breaks sitemap.xml.
+ */
+export async function fetchSitemapBusinesses(): Promise<ApiSitemapBusinessItem[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/businesses/sitemap`, { cache: "no-store" });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json?.data)) return json.data;
+    }
+  } catch (e) {
+    console.warn("fetchSitemapBusinesses API call failed, falling back:", e);
+  }
+
+  const fallback = await fetchAllBusinessesForSitemap();
+  return fallback.map((b) => ({ slug: b.slug, updated_at: b.updated_at }));
+}
+
+/**
+ * GET /businesses/categories — distinct `category` values actually in use
+ * by public businesses, with counts. `category` is the raw Geoapify
+ * taxonomy leaf (e.g. "catering.restaurant"), not an Indonesian label —
+ * see lib/slug.ts's categoryDisplayName()/slugify() for how the FE turns
+ * that into a URL slug and a readable heading.
+ *
+ * Falls back to the local mock category list (same {category,count} shape)
+ * so /kategori pages and the sitemap still render something sensible if
+ * the backend is unreachable, instead of an empty/broken page.
+ */
+export async function fetchCategoryFacets(): Promise<ApiCategoryFacet[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/businesses/categories`, { cache: "no-store" });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json?.data)) return json.data;
+    }
+  } catch (e) {
+    console.warn("fetchCategoryFacets API call failed, falling back to mock categories:", e);
+  }
+
+  return mockCategories
+    .filter((c) => c.status === "ACTIVE")
+    .map((c) => ({ category: c.name, count: c.businessCount }));
+}
+
+/**
+ * GET /businesses/cities — distinct `city` values actually in use by
+ * public businesses, with counts. Same fallback strategy as
+ * fetchCategoryFacets() above.
+ */
+export async function fetchCityFacets(): Promise<ApiCityFacet[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/businesses/cities`, { cache: "no-store" });
+    if (res.ok) {
+      const json = await res.json();
+      if (Array.isArray(json?.data)) return json.data;
+    }
+  } catch (e) {
+    console.warn("fetchCityFacets API call failed, falling back to mock cities:", e);
+  }
+
+  return mockCities
+    .filter((c) => c.status === "ACTIVE")
+    .map((c) => ({ city: c.name, count: c.businessCount }));
 }
 
 /**
