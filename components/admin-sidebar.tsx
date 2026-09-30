@@ -8,7 +8,11 @@ import {
   CircleHelpIcon,
   DatabaseIcon,
   ExternalLinkIcon,
+  FileTextIcon,
   FlagIcon,
+  FolderTreeIcon,
+  HashIcon,
+  ImagesIcon,
   LayoutDashboardIcon,
   ScrollTextIcon,
   SearchIcon,
@@ -48,6 +52,15 @@ const navGroups = [
   {
     label: "Trust & Safety",
     items: [{ title: "Trust & Safety", url: "/admin/trust-safety", icon: FlagIcon }],
+  },
+  {
+    label: "Konten (CMS)",
+    items: [
+      { title: "Konten", url: "/admin/cms/contents", icon: FileTextIcon },
+      { title: "Kategori", url: "/admin/cms/categories", icon: FolderTreeIcon },
+      { title: "Tag", url: "/admin/cms/tags", icon: HashIcon },
+      { title: "Media Library", url: "/admin/cms/media", icon: ImagesIcon },
+    ],
   },
   {
     label: "Management",

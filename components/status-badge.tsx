@@ -69,6 +69,11 @@ const STATUS_TONE: Record<string, VariantProps<typeof statusBadgeVariants>["tone
   DALAM_PROSES: "amber",
   SELESAI: "green",
   DITOLAK: "red",
+  // CMS content statuses (/admin/cms). PUBLISHED is already green above.
+  DRAFT: "gray",
+  IN_REVIEW: "amber",
+  SCHEDULED: "blue",
+  ARCHIVED: "gray",
 }
 
 const STATUS_LABEL: Record<string, string> = {
