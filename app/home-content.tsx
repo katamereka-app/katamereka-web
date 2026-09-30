@@ -8,6 +8,7 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   ArrowRight,
   CheckCircle2,
   Building2,
@@ -30,7 +31,7 @@ import {
 import Navbar from "@/components/navbar";
 import { fetchBusinesses, fetchPopularBusinesses, mapApiBusinessToUiModel, ApiCategoryFacet, ApiCityFacet } from "@/lib/api-client";
 import { Business } from "@/lib/mock-data";
-import { slugify, categoryDisplayName } from "@/lib/slug";
+import { slugify, categoryDisplayName, isRealBusinessCategory } from "@/lib/slug";
 
 interface HomeContentProps {
   initialCategoryFacets: ApiCategoryFacet[];
@@ -49,6 +50,18 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
   const [cityFacets] = useState<ApiCityFacet[]>(initialCityFacets);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+
+  const scrollCategories = (direction: "left" | "right") => {
+    if (categoryScrollRef.current) {
+      const { scrollLeft, clientWidth } = categoryScrollRef.current;
+      const scrollAmount = clientWidth * 0.8;
+      categoryScrollRef.current.scrollTo({
+        left: direction === "left" ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
 
   useEffect(() => {
     async function loadPopular() {
@@ -364,39 +377,105 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
           {/* Header */}
           <div className="flex items-center justify-between">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Jelajahi berdasarkan kategori</h2>
-            <div className="hidden sm:flex items-center gap-1 text-xs font-semibold text-[#008767] bg-[#e8f6f2] px-3 py-1.5 rounded-full border border-[#c4ebde]">
-              <span>Temukan lebih banyak kategori lainnya</span>
+            <Link
+              href="/businesses"
+              className="hidden sm:flex items-center gap-1 text-xs font-semibold text-[#008767] bg-[#e8f6f2] hover:bg-[#d5f0e8] transition-colors px-3.5 py-1.5 rounded-full border border-[#c4ebde]"
+            >
+              <span>Temukan lebih banyak</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
-            </div>
+            </Link>
           </div>
 
-          {/* Grid Kategori */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[
-              { name: "Bisnis", count: "12.4k+ entitas", icon: Building2, color: "text-blue-600 bg-blue-50 border-blue-100" },
-              { name: "Produk", count: "8.7k+ entitas", icon: Package, color: "text-amber-600 bg-amber-50 border-amber-100" },
-              { name: "Tempat", count: "10.2k+ entitas", icon: MapPin, color: "text-emerald-600 bg-emerald-50 border-emerald-100" },
-              { name: "Jasa", count: "6.3k+ entitas", icon: Wrench, color: "text-purple-600 bg-purple-50 border-purple-100" },
-              { name: "Aplikasi", count: "5.1k+ entitas", icon: Smartphone, color: "text-sky-600 bg-sky-50 border-sky-100" },
-              { name: "Institusi", count: "3.8k+ entitas", icon: GraduationCap, color: "text-indigo-600 bg-indigo-50 border-indigo-100" },
-            ].map((cat, i) => {
-              const IconComp = cat.icon;
-              return (
-                <Link
-                  key={i}
-                  href="/businesses"
-                  className="group bg-slate-50/60 hover:bg-white rounded-2xl border border-slate-200/80 p-5 text-center transition-all hover:shadow-lg hover:border-[#008767]/30 flex flex-col items-center justify-center space-y-3"
-                >
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${cat.color} group-hover:scale-110 transition-transform shadow-2xs`}>
-                    <IconComp className="w-7 h-7" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm group-hover:text-[#008767] transition-colors">{cat.name}</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">{cat.count}</p>
-                  </div>
-                </Link>
-              );
-            })}
+          {/* Slider Kategori Container dengan Tombol Floating Selalu Tampil */}
+          <div className="relative group px-1">
+            {/* Tombol Slide Kiri */}
+            <button
+              onClick={() => scrollCategories("left")}
+              className="absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-700 shadow-md hover:bg-[#008767] hover:text-white hover:border-[#008767] hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer opacity-100"
+              aria-label="Previous categories"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+
+            {/* Track Card Kategori */}
+            <div
+              ref={categoryScrollRef}
+              className="flex gap-4 overflow-x-auto scroll-smooth pb-2 pt-1 no-scrollbar"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {categoryFacets
+                .filter((catItem) => isRealBusinessCategory(catItem.category))
+                .map((catItem, i) => {
+                  const name = categoryDisplayName(catItem.category);
+                  const lower = catItem.category.toLowerCase();
+                  
+                  let IconComp = Building2;
+                  let color = "text-blue-600 bg-blue-50 border-blue-100";
+                  
+                  if (lower.includes("hotel") || lower.includes("motel")) {
+                    IconComp = Hotel;
+                    color = "text-blue-600 bg-blue-50 border-blue-100";
+                  } else if (lower.includes("apartment")) {
+                    IconComp = Building2;
+                    color = "text-sky-600 bg-sky-50 border-sky-100";
+                  } else if (lower.includes("guest_house") || lower.includes("home stay") || lower.includes("homestay")) {
+                    IconComp = Store;
+                    color = "text-emerald-600 bg-emerald-50 border-emerald-100";
+                  } else if (lower.includes("chalet") || lower.includes("hostel")) {
+                    IconComp = Hotel;
+                    color = "text-amber-600 bg-amber-50 border-amber-100";
+                  } else if (lower.includes("residential")) {
+                    IconComp = Building2;
+                    color = "text-indigo-600 bg-indigo-50 border-indigo-100";
+                  } else if (lower.includes("restaurant") || lower.includes("catering") || lower.includes("cafe")) {
+                    IconComp = Utensils;
+                    color = "text-orange-600 bg-orange-50 border-orange-100";
+                  } else if (lower.includes("car_rental") || lower.includes("rental")) {
+                    IconComp = Wrench;
+                    color = "text-purple-600 bg-purple-50 border-purple-100";
+                  } else if (lower.includes("supermarket") || lower.includes("shopping")) {
+                    IconComp = Package;
+                    color = "text-teal-600 bg-teal-50 border-teal-100";
+                  } else {
+                    const colorSchemes = [
+                      "text-blue-600 bg-blue-50 border-blue-100",
+                      "text-amber-600 bg-amber-50 border-amber-100",
+                      "text-emerald-600 bg-emerald-50 border-emerald-100",
+                      "text-purple-600 bg-purple-50 border-purple-100",
+                      "text-sky-600 bg-sky-50 border-sky-100",
+                      "text-indigo-600 bg-indigo-50 border-indigo-100",
+                    ];
+                    color = colorSchemes[i % colorSchemes.length];
+                  }
+
+                  return (
+                    <Link
+                      key={catItem.category || i}
+                      href={`/kategori/${slugify(catItem.category)}`}
+                      className="group/card min-w-[calc((100%-1rem)/2)] sm:min-w-[calc((100%-2*1rem)/3)] md:min-w-[calc((100%-3*1rem)/4)] lg:min-w-[calc((100%-5*1rem)/6)] flex-1 bg-slate-50/60 hover:bg-white rounded-2xl border border-slate-200/80 p-5 text-center transition-all hover:shadow-lg hover:border-[#008767]/30 flex flex-col items-center justify-center space-y-3 shrink-0"
+                    >
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${color} group-hover/card:scale-110 transition-transform shadow-2xs`}>
+                        <IconComp className="w-7 h-7" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm group-hover/card:text-[#008767] transition-colors line-clamp-1">
+                          {name}
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-0.5">{catItem.count} entitas</p>
+                      </div>
+                    </Link>
+                  );
+                })}
+            </div>
+
+            {/* Tombol Slide Kanan */}
+            <button
+              onClick={() => scrollCategories("right")}
+              className="absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-700 shadow-md hover:bg-[#008767] hover:text-white hover:border-[#008767] hover:scale-110 active:scale-95 transition-all flex items-center justify-center cursor-pointer opacity-100"
+              aria-label="Next categories"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </section>

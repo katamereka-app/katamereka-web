@@ -14,14 +14,47 @@ export function slugify(input: string): string {
 }
 
 /**
- * Turns a raw business `category` value into a readable heading. Backend
- * categories are either a plain label (local mock/fallback data, e.g.
- * "Restoran") or a dot-namespaced Geoapify taxonomy leaf (e.g.
- * "catering.restaurant") — this takes the most specific (last) segment and
- * title-cases it either way, so "catering.restaurant" -> "Restaurant" and
- * "Restoran" -> "Restoran".
+ * Filter out Geoapify feature/attribute tags that are not real business categories
+ * (such as wheelchair.yes, internet_access, payment options, etc.)
+ */
+export function isRealBusinessCategory(rawCategory: string): boolean {
+  if (!rawCategory) return false;
+  const lower = rawCategory.toLowerCase();
+  if (
+    lower.startsWith("wheelchair") ||
+    lower.startsWith("internet_access") ||
+    lower.startsWith("payment") ||
+    lower.startsWith("fee") ||
+    lower.startsWith("access")
+  ) {
+    return false;
+  }
+  return true;
+}
+
+const CATEGORY_MAP: Record<string, string> = {
+  "accommodation.hotel": "Hotel",
+  "building.accommodation": "Akomodasi",
+  "accommodation.apartment": "Apartemen",
+  "accommodation.chalet": "Chalet",
+  "accommodation.guest_house": "Guest House",
+  "accommodation.hostel": "Hostel",
+  "accommodation.motel": "Motel",
+  "building.residential": "Residensial",
+  "catering.restaurant": "Restoran",
+  "catering.cafe": "Kafe",
+  "service.car_rental": "Rental Mobil",
+  "commercial.supermarket": "Supermarket",
+  "commercial.shopping_mall": "Pusat Perbelanjaan",
+};
+
+/**
+ * Turns a raw business `category` value into a readable heading.
  */
 export function categoryDisplayName(rawCategory: string): string {
+  if (!rawCategory) return "Bisnis";
+  if (CATEGORY_MAP[rawCategory]) return CATEGORY_MAP[rawCategory];
+
   const leaf = rawCategory.split(".").pop() || rawCategory;
   return leaf
     .replace(/_/g, " ")
