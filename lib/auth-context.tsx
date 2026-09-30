@@ -88,6 +88,28 @@ function clearSessionCookie() {
   }
 }
 
+// Client-side convenience decode of the session cookie's JWT payload — no
+// signature check here (middleware.ts already verified it server-side to
+// gate the page render). This only re-syncs which badge/menu the UI shows,
+// so a tab left open across a re-login elsewhere never keeps displaying a
+// stale cached role.
+function decodeSessionCookieClaims(): { role?: PlatformRole; businessRole?: BusinessMemberRole } | null {
+  try {
+    const match = document.cookie.match(/(?:^|; )km_session=([^;]*)/);
+    const token = match?.[1];
+    if (!token) return null;
+
+    const payloadB64 = token.split(".")[1];
+    if (!payloadB64) return null;
+
+    const base64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    return JSON.parse(atob(padded));
+  } catch (e) {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
@@ -98,14 +120,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (parsed.accessToken) {
-          setUser({
+          const freshClaims = decodeSessionCookieClaims();
+          const platformRole: PlatformRole = freshClaims?.role || parsed.platformRole || "USER";
+          const businessRole: BusinessMemberRole = freshClaims
+            ? freshClaims.businessRole ?? null
+            : parsed.businessRole ?? null;
+          const role: UserRole = businessRole ? "bisnis" : "customer";
+
+          const hydratedUser: UserProfile = {
             ...parsed,
-            role: parsed.role || "customer",
-            platformRole: parsed.platformRole || "USER",
-            businessRole: parsed.businessRole ?? null,
-          });
+            role,
+            platformRole,
+            businessRole,
+          };
+
+          setUser(hydratedUser);
           setIsLoggedIn(true);
           setSessionCookie(parsed.accessToken);
+          localStorage.setItem("katamereka_active_user", JSON.stringify(hydratedUser));
         }
       }
     } catch (e) {

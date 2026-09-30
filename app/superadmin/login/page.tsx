@@ -52,7 +52,9 @@ function SuperAdminLoginContent() {
     setIsLoading(false);
     setSuccess(true);
     setTimeout(() => {
-      router.push(redirectParam || "/admin");
+      // Hard navigation — see app/login/page.tsx for why router.push here
+      // would replay the client router's cached pre-login redirect.
+      window.location.href = redirectParam || "/admin";
     }, 700);
   };
 
@@ -69,8 +71,8 @@ function SuperAdminLoginContent() {
       </button>
 
       {/* Background Decor */}
-      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-red-600/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-red-600/10 blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#008767]/10 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-[#008767]/10 blur-3xl pointer-events-none" />
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
         style={{
@@ -82,7 +84,7 @@ function SuperAdminLoginContent() {
       <div className="w-full max-w-md relative z-10 space-y-6">
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center shadow-lg shadow-red-600/30 group-hover:scale-105 transition-transform flex-shrink-0">
+            <div className="w-11 h-11 rounded-xl bg-[#008767] flex items-center justify-center shadow-lg shadow-[#008767]/30 group-hover:scale-105 transition-transform flex-shrink-0">
               <ShieldAlert className="w-6 h-6 text-white" />
             </div>
             <span className="text-2xl font-extrabold text-white tracking-tight">
@@ -125,7 +127,7 @@ function SuperAdminLoginContent() {
                   placeholder="admin@katamereka.id"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 focus:border-red-600 focus:bg-white/10 focus:ring-2 focus:ring-red-600/30 rounded-xl pl-10 pr-4 py-3 text-white text-sm outline-none transition-all placeholder:text-slate-500"
+                  className="w-full bg-white/5 border border-white/10 focus:border-[#008767] focus:bg-white/10 focus:ring-2 focus:ring-[#008767]/30 rounded-xl pl-10 pr-4 py-3 text-white text-sm outline-none transition-all placeholder:text-slate-500"
                 />
               </div>
             </div>
@@ -143,7 +145,7 @@ function SuperAdminLoginContent() {
                   placeholder="Kata sandi administrator"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 focus:border-red-600 focus:bg-white/10 focus:ring-2 focus:ring-red-600/30 rounded-xl pl-10 pr-11 py-3 text-white text-sm outline-none transition-all placeholder:text-slate-500"
+                  className="w-full bg-white/5 border border-white/10 focus:border-[#008767] focus:bg-white/10 focus:ring-2 focus:ring-[#008767]/30 rounded-xl pl-10 pr-11 py-3 text-white text-sm outline-none transition-all placeholder:text-slate-500"
                 />
                 <button
                   type="button"
@@ -158,7 +160,7 @@ function SuperAdminLoginContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-red-600/30 active:scale-95 disabled:opacity-70 mt-2"
+              className="w-full py-3.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-[#008767]/30 active:scale-95 disabled:opacity-70 mt-2"
             >
               {isLoading ? (
                 <span>Memverifikasi...</span>
