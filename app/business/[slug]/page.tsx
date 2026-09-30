@@ -199,17 +199,23 @@ export default function BusinessProfilePage() {
   const emailStr = cleanValue(apiDetail?.email);
   const websiteStr = cleanValue(apiDetail?.website);
 
-  // For address: prefer externalMetadata.address_line2 (full street) > externalMetadata.formatted > address field
-  const metaAddressLine2 = cleanValue(apiDetail?.externalMetadata?.address_line2);
-  const metaFormatted = cleanValue(apiDetail?.externalMetadata?.formatted);
+  // Address resolution: prefer externalMetadata.formatted > externalMetadata.address_line2 > address field
+  const metaFormatted = cleanValue(
+    apiDetail?.externalMetadata?.formatted ||
+    (apiDetail as any)?.external_metadata?.formatted
+  );
+  const metaAddressLine2 = cleanValue(
+    apiDetail?.externalMetadata?.address_line2 ||
+    (apiDetail as any)?.external_metadata?.address_line2
+  );
   const rawAddress = cleanValue(apiDetail?.address);
-  // If the address field is just the business name (same as name), use metadata
-  const addressIsSameasName =
-    apiDetail?.address && apiDetail?.name &&
-    apiDetail.address.trim().toLowerCase() === apiDetail.name.trim().toLowerCase();
-  const addressStr = addressIsSameasName
-    ? (metaAddressLine2 !== "-" ? metaAddressLine2 : metaFormatted !== "-" ? metaFormatted : rawAddress)
-    : rawAddress;
+
+  const addressStr =
+    metaFormatted !== "-"
+      ? metaFormatted
+      : metaAddressLine2 !== "-"
+      ? metaAddressLine2
+      : rawAddress;
 
   const cityStr = cleanValue(apiDetail?.city);
   const provinceStr = cleanValue(apiDetail?.province);
