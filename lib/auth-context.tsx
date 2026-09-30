@@ -38,17 +38,17 @@ interface AuthContextType {
   logout: () => void;
 }
 
-const defaultUser: UserProfile = {
-  name: "Dewi Lestari",
-  username: "dewilestari",
-  email: "dewi.lestari@gmail.com",
-  initials: "DL",
-  joinedDate: "Jan 2024",
-  verified: true,
+const emptyDefaultUser: UserProfile = {
+  name: "-",
+  username: "-",
+  email: "-",
+  initials: "-",
+  joinedDate: "-",
+  verified: false,
   role: "customer",
-  reviewCount: 28,
-  helpfulCount: 146,
-  businessCount: 21,
+  reviewCount: 0,
+  helpfulCount: 0,
+  businessCount: 0,
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -61,9 +61,6 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
-// Lightweight, non-sensitive marker cookie so middleware (edge, no access to
-// localStorage) can tell a session exists and gate /dashboard server-side.
-// The real credential stays in localStorage's accessToken as before.
 function setSessionCookie() {
   try {
     document.cookie = "km_session=1; path=/; max-age=2592000; SameSite=Lax";
@@ -125,7 +122,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const returnedUser = data.user || {};
       const lowerEmail = email.trim().toLowerCase();
 
-      // Determine user role (check API response first, then localStorage registered_user)
       let userRole: UserRole = "customer";
       if (returnedUser.role === "bisnis" || returnedUser.role === "BISNIS") {
         userRole = "bisnis";
@@ -160,11 +156,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .toUpperCase();
 
       const loadedUser: UserProfile = {
-        id: returnedUser.id || "76157bdb-1804-4752-83ae-80ab3fb699df",
+        id: returnedUser.id || "",
         name: userName,
         username: lowerEmail.split("@")[0].toLowerCase().replace(/\s+/g, ""),
         email: returnedUser.email || lowerEmail,
-        initials: initials || "U",
+        initials: initials || "-",
         joinedDate: "Sep 2026",
         verified: true,
         role: userRole,
@@ -191,9 +187,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         accessToken: data.accessToken,
       };
     } catch (e) {
-      // Fallback local logic if network error
-      const namePart = email.split("@")[0] || "User";
-      const initials = namePart.substring(0, 2).toUpperCase();
+      const namePart = email.split("@")[0] || "-";
+      const initials = namePart !== "-" ? namePart.substring(0, 2).toUpperCase() : "-";
       const lowerEmail = email.trim().toLowerCase();
 
       let userRole: UserRole = "customer";
@@ -210,9 +205,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const fallbackUser: UserProfile = {
-        id: "76157bdb-1804-4752-83ae-80ab3fb699df",
+        id: "",
         name: namePart,
-        username: namePart.toLowerCase(),
+        username: namePart !== "-" ? namePart.toLowerCase() : "-",
         email: email,
         initials: initials,
         joinedDate: "Sep 2026",
@@ -250,7 +245,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const lowerEmail = email.trim().toLowerCase();
 
-    // Save registered user profile including selected role in localStorage
     const regUserData = {
       name: name.trim(),
       email: lowerEmail,
@@ -316,7 +310,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!token && user?.accessToken) {
         token = user.accessToken;
       }
-      // Demo fallback token if user hasn't logged in yet
       if (!token) {
         token = "mock_access_token_demo";
       }
@@ -383,7 +376,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider
       value={{
-        user: user || defaultUser,
+        user: user || (isLoggedIn ? null : emptyDefaultUser),
         isLoggedIn,
         login,
         signup,
