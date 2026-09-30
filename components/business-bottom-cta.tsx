@@ -18,7 +18,7 @@ export default function BusinessBottomCta() {
             Daftar Akun Bisnis Gratis
           </Link>
           <Link
-            href="/login?role=bisnis&redirect=/dashboard"
+            href="/login?role=bisnis"
             className="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#005a44] hover:bg-[#004e3b] text-white font-extrabold text-base border border-emerald-400/40 transition-all"
           >
             Masuk ke Dashboard
