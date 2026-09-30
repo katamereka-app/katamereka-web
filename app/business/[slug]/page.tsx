@@ -265,32 +265,74 @@ export default function BusinessProfilePage() {
   const emailStr = cleanValue(apiDetail?.email);
   const websiteStr = cleanValue(apiDetail?.website);
 
-  // Address resolution: prefer externalMetadata.formatted > externalMetadata.address_line2 > address field
-  const metaFormatted = cleanValue(
-    apiDetail?.externalMetadata?.formatted ||
-    (apiDetail as any)?.external_metadata?.formatted
-  );
-  const metaAddressLine2 = cleanValue(
-    apiDetail?.externalMetadata?.address_line2 ||
-    (apiDetail as any)?.external_metadata?.address_line2
-  );
-  const rawAddress = cleanValue(apiDetail?.address);
-
-  const addressStr =
-    metaFormatted !== "-"
-      ? metaFormatted
-      : metaAddressLine2 !== "-"
-      ? metaAddressLine2
-      : rawAddress;
-
   const cityStr = cleanValue(apiDetail?.city);
   const provinceStr = cleanValue(apiDetail?.province);
+  const locationStr =
+    cityStr !== "-"
+      ? `${cityStr}${provinceStr !== "-" ? `, ${provinceStr}` : ""}`
+      : "-";
 
-  const locationStr = cityStr !== "-"
-    ? `${cityStr}${provinceStr !== "-" ? `, ${provinceStr}` : ""}`
-    : addressStr;
+  // Address resolution: resolve true street address avoiding repeating place name
+  const addressStr = (() => {
+    const bizName = (apiDetail?.name || "").trim().toLowerCase();
+    const meta = apiDetail?.externalMetadata || (apiDetail as any)?.external_metadata || {};
 
-  const displayLocation = addressStr !== "-" ? addressStr : locationStr;
+    const formatted = cleanValue(meta.formatted);
+    const line2 = cleanValue(meta.address_line2);
+    const line1 = cleanValue(meta.address_line1);
+    const street = cleanValue(meta.street);
+    const housenumber = cleanValue(meta.housenumber);
+    const suburb = cleanValue(meta.suburb || meta.district || meta.neighbourhood);
+    const rawAddr = cleanValue(apiDetail?.address);
+
+    const isValidAddress = (str: string) => {
+      if (!str || str === "-") return false;
+      const lower = str.trim().toLowerCase();
+      if (lower === bizName) return false;
+      return true;
+    };
+
+    const cleanPrefix = (str: string) => {
+      if (!str || str === "-") return "-";
+      if (bizName && str.toLowerCase().startsWith(bizName)) {
+        const stripped = str.substring(bizName.length).replace(/^[\s,:-]+/, "").trim();
+        if (stripped.length > 3) return stripped;
+      }
+      return str;
+    };
+
+    // 1. Try formatted address after stripping business name prefix
+    const strippedFormatted = cleanPrefix(formatted);
+    if (isValidAddress(strippedFormatted)) return strippedFormatted;
+
+    // 2. Try address_line2 (Geoapify address_line2 usually contains street & district)
+    const strippedLine2 = cleanPrefix(line2);
+    if (isValidAddress(strippedLine2)) return strippedLine2;
+
+    // 3. Try street + housenumber + suburb
+    if (street !== "-") {
+      let constructed = street;
+      if (housenumber !== "-") constructed = `${street} No. ${housenumber}`;
+      if (suburb !== "-") constructed = `${constructed}, ${suburb}`;
+      if (cityStr !== "-") constructed = `${constructed}, ${cityStr}`;
+      if (isValidAddress(constructed)) return constructed;
+    }
+
+    // 4. Try rawAddress after stripping business name prefix
+    const strippedRaw = cleanPrefix(rawAddr);
+    if (isValidAddress(strippedRaw)) return strippedRaw;
+
+    // 5. Try address_line1 after stripping business name prefix
+    const strippedLine1 = cleanPrefix(line1);
+    if (isValidAddress(strippedLine1)) return strippedLine1;
+
+    // 6. Fallback to locationStr (City, Province)
+    if (locationStr !== "-") return locationStr;
+
+    return "-";
+  })();
+
+  const displayLocation = locationStr !== "-" ? locationStr : addressStr;
 
   // Logo & cover: prefer camelCase (real API) > snake_case (legacy)
   const logoUrl = apiDetail?.logoUrl ?? apiDetail?.logo_url ?? null;
@@ -718,14 +760,17 @@ export default function BusinessProfilePage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 text-slate-700 min-w-0">
                     <MapPin className="w-4 h-4 text-[#008767] flex-shrink-0 mt-0.5" />
-                    {addressStr !== "-" || displayLocation !== "-" ? (
+                    {addressStr !== "-" ? (
                       <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressStr !== "-" ? addressStr : displayLocation)}`}
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          `${apiDetail?.name ? `${apiDetail.name}, ` : ""}${addressStr}`
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="leading-snug font-medium text-slate-800 hover:text-[#008767] hover:underline"
+                        title="Buka lokasi di Google Maps"
                       >
-                        {addressStr !== "-" ? addressStr : displayLocation}
+                        {addressStr}
                       </a>
                     ) : (
                       <span className="text-slate-400 font-medium">-</span>
