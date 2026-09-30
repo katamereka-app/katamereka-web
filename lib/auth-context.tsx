@@ -88,29 +88,68 @@ function clearSessionCookie() {
   }
 }
 
+// Asks the API who this token actually belongs to right now — the source of
+// truth for role/businessRole, so a tab left open across a re-login
+// elsewhere (or a role change made by an admin) never keeps showing a role
+// that's stale relative to the account's real, current state.
+async function fetchFreshClaims(
+  token: string
+): Promise<{ role?: PlatformRole; businessRole?: BusinessMemberRole } | null> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("katamereka_active_user");
-      if (stored) {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const stored = localStorage.getItem("katamereka_active_user");
+        if (!stored) return;
+
         const parsed = JSON.parse(stored);
-        if (parsed.accessToken) {
-          setUser({
-            ...parsed,
-            role: parsed.role || "customer",
-            platformRole: parsed.platformRole || "USER",
-            businessRole: parsed.businessRole ?? null,
-          });
-          setIsLoggedIn(true);
-          setSessionCookie(parsed.accessToken);
+        if (!parsed.accessToken) return;
+
+        const freshClaims = await fetchFreshClaims(parsed.accessToken);
+        if (cancelled) return;
+
+        if (!freshClaims) {
+          // Token no longer valid server-side (expired/revoked) — don't
+          // keep the UI in a logged-in state a real request would reject.
+          clearSessionCookie();
+          localStorage.removeItem("katamereka_active_user");
+          return;
         }
+
+        const platformRole: PlatformRole = freshClaims.role || "USER";
+        const businessRole: BusinessMemberRole = freshClaims.businessRole ?? null;
+        const role: UserRole = businessRole ? "bisnis" : "customer";
+
+        const hydratedUser: UserProfile = { ...parsed, role, platformRole, businessRole };
+
+        setUser(hydratedUser);
+        setIsLoggedIn(true);
+        setSessionCookie(parsed.accessToken);
+        localStorage.setItem("katamereka_active_user", JSON.stringify(hydratedUser));
+      } catch (e) {
+        // Ignore fallback
       }
-    } catch (e) {
-      // Ignore fallback
-    }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const login = async (email: string, pass: string): Promise<AuthResponse> => {

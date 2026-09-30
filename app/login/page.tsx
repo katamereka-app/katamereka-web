@@ -54,16 +54,18 @@ function LoginFormContent() {
       setIsLoading(false);
       setSuccess(true);
 
-      // Target decided from the server-verified session, not a guessable param.
-      const isBusinessContext = !!res.user?.businessRole;
-
-      let targetPath = redirectParam;
-      if (!targetPath) {
-        targetPath = isBusinessContext ? "/dashboard" : "/";
-      }
+      // Land on the site home by default — a business account always has
+      // the "Dashboard" button in the navbar (see navbar.tsx isBusinessUser)
+      // rather than being dropped straight into /dashboard. Only an explicit
+      // redirect param (from a forced-login bounce) overrides this.
+      const targetPath = redirectParam || "/";
 
       setTimeout(() => {
-        router.push(targetPath);
+        // Hard navigation, not router.push: the client router cached the
+        // pre-login redirect-to-login outcome for this path, and a soft
+        // nav would replay that stale cache instead of re-checking the
+        // fresh cookie against middleware.
+        window.location.href = targetPath;
       }, 800);
     } else {
       setIsLoading(false);
@@ -103,24 +105,13 @@ function LoginFormContent() {
     }
   };
 
-  const accent = isBisnis ? "#1d4ed8" : "#008767";
-  // Full literal class strings (not interpolated) so Tailwind's scanner emits both.
-  const focusRingClasses = isBisnis
-    ? "focus:border-blue-600 focus:ring-blue-600/20"
-    : "focus:border-[#008767] focus:ring-[#008767]/20";
-  const checkboxAccentClass = isBisnis ? "accent-blue-700" : "accent-[#008767]";
-  const primaryButtonClasses = isBisnis
-    ? "bg-blue-700 hover:bg-blue-800 shadow-blue-700/20"
-    : "bg-[#008767] hover:bg-[#007458] shadow-[#008767]/20";
+  const accent = "#008767";
+  const focusRingClasses = "focus:border-[#008767] focus:ring-[#008767]/20";
+  const checkboxAccentClass = "accent-[#008767]";
+  const primaryButtonClasses = "bg-[#008767] hover:bg-[#007458] shadow-[#008767]/20";
 
   return (
-    <div
-      className={`min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans ${
-        isBisnis
-          ? "bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50"
-          : "bg-gradient-to-br from-[#e8f6f2] via-slate-50 to-[#f4faf7]"
-      }`}
-    >
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans bg-gradient-to-br from-[#e8f6f2] via-slate-50 to-[#f4faf7]">
       {/* Back — leave the login page entirely, not a form step */}
       <button
         type="button"
@@ -151,7 +142,7 @@ function LoginFormContent() {
             </div>
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
               Kata<span style={{ color: accent }}>mereka</span>
-              {isBisnis && <span className="ml-1.5 align-middle text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100 rounded-full px-2 py-1">Business</span>}
+              {isBisnis && <span className="ml-1.5 align-middle text-xs font-bold uppercase tracking-wider text-[#008767] bg-[#e8f6f2] rounded-full px-2 py-1">Business</span>}
             </span>
           </Link>
         </div>

@@ -382,7 +382,7 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
             /* Business Landing Header Buttons: Log in | Create free account */
             <div className="hidden sm:flex items-center gap-3">
               <Link
-                href="/login?role=bisnis&redirect=/dashboard"
+                href="/login?role=bisnis"
                 className="px-4 py-2 rounded-xl text-slate-700 hover:text-[#008767] font-bold text-sm transition-colors"
               >
                 Log in
@@ -639,7 +639,7 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
             ) : isBusinessView ? (
               <div className="pt-4 border-t border-slate-100 space-y-2.5 mt-3">
                 <Link
-                  href="/login?role=bisnis&redirect=/dashboard"
+                  href="/login?role=bisnis"
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full block text-center py-2.5 rounded-xl border border-slate-200 text-slate-800 font-bold text-sm hover:bg-slate-50 transition-colors"
                 >
