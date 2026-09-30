@@ -25,7 +25,11 @@ import {
   Store,
   ArrowUp,
   ArrowUpRight,
-  ShieldCheck
+  ShieldCheck,
+  Coffee,
+  Bed,
+  ShoppingBag,
+  Flower2
 } from "lucide-react";
 
 import Navbar from "@/components/navbar";
@@ -36,6 +40,41 @@ import { slugify, categoryDisplayName, isRealBusinessCategory } from "@/lib/slug
 interface HomeContentProps {
   initialCategoryFacets: ApiCategoryFacet[];
   initialCityFacets: ApiCityFacet[];
+}
+
+function getCategoryIconAndColor(categoryRaw: string, index: number) {
+  const lower = (categoryRaw || "").toLowerCase();
+  if (lower.includes("hotel") || lower.includes("motel") || lower.includes("accommodation")) {
+    return { icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" };
+  }
+  if (lower.includes("restaurant") || lower.includes("catering") || lower.includes("makan") || lower.includes("kuliner")) {
+    return { icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" };
+  }
+  if (lower.includes("cafe") || lower.includes("coffee") || lower.includes("ngopi")) {
+    return { icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" };
+  }
+  if (lower.includes("car") || lower.includes("jasa") || lower.includes("service") || lower.includes("repair") || lower.includes("rental")) {
+    return { icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" };
+  }
+  if (lower.includes("shop") || lower.includes("store") || lower.includes("belanja") || lower.includes("supermarket") || lower.includes("mall")) {
+    return { icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" };
+  }
+  if (lower.includes("beauty") || lower.includes("kecantikan") || lower.includes("spa") || lower.includes("perawatan") || lower.includes("health")) {
+    return { icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" };
+  }
+  if (lower.includes("apartment") || lower.includes("building") || lower.includes("property") || lower.includes("residential")) {
+    return { icon: Building2, bgColor: "bg-indigo-100/80 text-indigo-600" };
+  }
+
+  const presets = [
+    { icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
+    { icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
+    { icon: Bed, bgColor: "bg-purple-100/80 text-purple-600" },
+    { icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" },
+    { icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
+    { icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
+  ];
+  return presets[index % presets.length];
 }
 
 export default function LandingPage({ initialCategoryFacets, initialCityFacets }: HomeContentProps) {
@@ -128,10 +167,10 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       <Navbar />
 
       {/* ================= HERO SECTION ================= */}
-      <section className="relative pt-12 pb-20 md:pt-16 md:pb-28 overflow-hidden bg-gradient-to-b from-white via-[#f4faf7]/50 to-slate-50/50">
+      <section className="relative pt-10 pb-12 sm:pt-14 sm:pb-16 lg:pt-16 lg:pb-20 overflow-hidden bg-gradient-to-b from-white via-[#f4faf7]/50 to-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            
+
             {/* Left Column: Heading & Search */}
             <div className="lg:col-span-6 space-y-6 text-center lg:text-left flex flex-col items-center lg:items-start">
 
@@ -190,7 +229,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 1: BISNIS POPULER ================= */}
-      <section className="py-16 bg-white">
+      <section className="py-10 sm:py-12 lg:py-14 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -252,127 +291,100 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
         </div>
       </section>
 
-      {/* ================= SECTION 2: PENGALAMAN TERBARU ================= */}
-      <section className="py-16 bg-slate-50/70 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">💬</span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Pengalaman Terbaru</h2>
-            </div>
-            <Link
-              href="/businesses"
-              className="group text-sm font-semibold text-[#008767] hover:text-[#006e54] flex items-center gap-1.5 transition-colors"
-            >
-              <span>Lihat semua</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-
-          {/* Review Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                author: "Rina S.",
-                initials: "RS",
-                rating: 4.6,
-                time: "3 hari yang lalu",
-                content: "Pelayanannya cepat dan barang sesuai deskripsi. Sudah beberapa kali belanja di sini dan selalu ini aman.",
-                business: "Tokopedia",
-                slug: "tokopedia",
-                initial: "T",
-                bgColor: "bg-emerald-50 text-emerald-600"
-              },
-              {
-                author: "Andi Pratama",
-                initials: "AP",
-                rating: 4.5,
-                time: "5 hari yang lalu",
-                content: "Kamarnya bersih, pelayanan ramah, lokasi strategis. Cuma sarapan bisa lebih bervariasi lagi.",
-                business: "Hotel Santika Premiere",
-                slug: "hotel-santika-premiere",
-                initial: "H",
-                bgColor: "bg-blue-50 text-blue-600"
-              },
-              {
-                author: "Dewi Lestari",
-                initials: "DL",
-                rating: 4.8,
-                time: "1 minggu yang lalu",
-                content: "Performanya luar biasa! Baterai tahan lama dan kameranya makin keren. Sangat worth it.",
-                business: "iPhone 17",
-                slug: "iphone-17",
-                initial: "",
-                bgColor: "bg-slate-100 text-slate-800"
-              },
-              {
-                author: "Fajar Nugroho",
-                initials: "FN",
-                rating: 4.6,
-                time: "1 minggu yang lalu",
-                content: "Proses booking mudah, harga juga kompetitif. Tapi beberapa kali ada delay di check-in.",
-                business: "Traveloka",
-                slug: "traveloka",
-                initial: "T",
-                bgColor: "bg-sky-50 text-sky-600"
-              }
-            ].map((rev, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-3">
-                  {/* User Profile Info */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-700">
-                      {rev.initials}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{rev.author}</h4>
-                      <div className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
-                        <div className="flex text-amber-400">
-                          {"★".repeat(5)}
-                        </div>
-                        <span className="font-medium text-amber-500">{rev.rating}</span>
-                        <span>•</span>
-                        <span>{rev.time}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Review Text */}
-                  <p className="text-sm text-slate-600 leading-relaxed italic">
-                    "{rev.content}"
-                  </p>
-                </div>
-
-                <div className="space-y-3 pt-2 border-t border-slate-100">
-                  {/* Verified Badge */}
-                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#008767] bg-[#e8f6f2] px-2.5 py-1 rounded-md">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Verified Experience</span>
-                  </div>
-
-                  {/* Tagged Business */}
-                  <Link
-                    href={`/business/${rev.slug}`}
-                    className="flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-[#008767] transition-colors"
-                  >
-                    <div className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[10px] ${rev.bgColor}`}>
-                      {rev.initial}
-                    </div>
-                    <span className="truncate">{rev.business}</span>
-                  </Link>
-                </div>
+      {/* ================= SECTION 2: CARI SESUAI KEBUTUHAN ================= */}
+      <section className="py-10 sm:py-12 lg:py-14 bg-[#f4faf7]/60 border-t border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            
+            {/* Left Column: Heading, Description & Centered Large Illustration */}
+            <div className="lg:col-span-5 space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
+              <div className="w-full">
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.2]">
+                  Apa yang sedang<br className="hidden sm:block" /> kamu cari?
+                </h2>
               </div>
-            ))}
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-md">
+                Temukan bisnis berdasarkan kebutuhanmu, bukan hanya berdasarkan nama atau kategori.
+              </p>
+
+              {/* Newly attached Illustration image aligned proportionally to the left */}
+              <div className="pt-4 sm:pt-6 w-full flex justify-center lg:justify-start items-center -ml-2 sm:-ml-4 lg:-ml-6">
+                <img
+                  src="/ilus-search.png"
+                  alt="Cari Sesuai Kebutuhan"
+                  className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-auto object-contain transform transition-transform"
+                />
+              </div>
+            </div>
+
+            {/* Right Column: Dynamic 2x3 Category Cards Grid (Top 6 categories by count) */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
+                {(() => {
+                  const top6Facets = (categoryFacets || [])
+                    .filter((catItem) => isRealBusinessCategory(catItem.category))
+                    .sort((a, b) => (b.count || 0) - (a.count || 0))
+                    .slice(0, 6);
+
+                  const dynamicDisplayCards = top6Facets.length > 0
+                    ? top6Facets.map((cat, idx) => ({
+                        title: categoryDisplayName(cat.category),
+                        href: `/kategori/${slugify(cat.category)}`,
+                        ...getCategoryIconAndColor(cat.category, idx)
+                      }))
+                    : [
+                        { title: "Hotel", href: "/kategori/accommodation.hotel", icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" },
+                        { title: "Restoran", href: "/kategori/catering.restaurant", icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
+                        { title: "Kafe & Ngopi", href: "/kategori/catering.cafe", icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
+                        { title: "Supermarket", href: "/kategori/shop.supermarket", icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
+                        { title: "Cari Jasa", href: "/businesses", icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" },
+                        { title: "Perawatan", href: "/kategori/kecantikan", icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
+                      ];
+
+                  return dynamicDisplayCards.map((item, idx) => {
+                    const IconComponent = item.icon;
+                  return (
+                    <Link
+                      key={idx}
+                      href={item.href}
+                      className="group bg-white rounded-2xl border border-slate-200/80 p-5 hover:border-[#008767]/40 hover:shadow-lg transition-all flex flex-col justify-between space-y-4 min-h-[140px]"
+                    >
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center ${item.bgColor}`}>
+                        <IconComponent className="w-5.5 h-5.5" />
+                      </div>
+
+                      <div className="space-y-3">
+                        <h3 className="font-bold text-slate-900 text-sm group-hover:text-[#008767] transition-colors">
+                          {item.title}
+                        </h3>
+                        <div className="w-7 h-7 rounded-full bg-[#e8f6f2] text-[#008767] flex items-center justify-center text-xs font-bold group-hover:bg-[#008767] group-hover:text-white transition-colors">
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                });
+              })()}
+              </div>
+
+              {/* Bottom Right Link */}
+              <div className="text-right pt-2">
+                <Link
+                  href="/businesses"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#008767] hover:text-[#006e54] transition-colors"
+                >
+                  <span>Lihat semua kategori</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
 
       {/* ================= SECTION 3: KATEGORI ================= */}
-      <section className="py-16 bg-white">
+      <section className="py-10 sm:py-12 lg:py-14 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -408,10 +420,10 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 .map((catItem, i) => {
                   const name = categoryDisplayName(catItem.category);
                   const lower = catItem.category.toLowerCase();
-                  
+
                   let IconComp = Building2;
                   let color = "text-blue-600 bg-blue-50 border-blue-100";
-                  
+
                   if (lower.includes("hotel") || lower.includes("motel")) {
                     IconComp = Hotel;
                     color = "text-blue-600 bg-blue-50 border-blue-100";
@@ -480,7 +492,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
         </div>
       </section>
       {/* ================= SECTION 5: FAQ ================= */}
-      <section className="py-16 bg-gradient-to-b from-[#f4faf7] to-white border-t border-[#d3f0e5]">
+      <section className="py-10 sm:py-12 lg:py-14 bg-gradient-to-b from-[#f4faf7] to-white border-t border-[#d3f0e5]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           {/* Header */}
           <div className="text-center space-y-3">
@@ -495,27 +507,24 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
             {faqs.map((faq, i) => (
               <div
                 key={i}
-                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
-                  openFaq === i
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${openFaq === i
                     ? "border-[#008767]/30 bg-white shadow-md shadow-[#008767]/5"
                     : "border-slate-200/80 bg-white hover:border-[#008767]/20 hover:shadow-sm"
-                }`}
+                  }`}
               >
                 <button
                   type="button"
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
                 >
-                  <span className={`font-semibold text-sm sm:text-base transition-colors ${
-                    openFaq === i ? "text-[#008767]" : "text-slate-900"
-                  }`}>
+                  <span className={`font-semibold text-sm sm:text-base transition-colors ${openFaq === i ? "text-[#008767]" : "text-slate-900"
+                    }`}>
                     {faq.q}
                   </span>
-                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-                    openFaq === i
+                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${openFaq === i
                       ? "bg-[#008767] text-white rotate-180"
                       : "bg-slate-100 text-slate-500"
-                  }`}>
+                    }`}>
                     <ChevronDown className="w-4 h-4" />
                   </span>
                 </button>
@@ -541,7 +550,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 4: CTA BANNER ================= */}
-      <section className="py-12 bg-white">
+      <section className="py-8 sm:py-10 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-r from-[#e1f3ed] via-[#ebf7f3] to-[#f4faf7] rounded-3xl p-8 sm:p-10 border border-[#bce4d7] shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-5">
@@ -569,11 +578,11 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
 
 
       {/* ================= FOOTER ================= */}
-      <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 text-slate-600 text-sm">
+      <footer className="bg-white border-t border-slate-200/80 pt-12 pb-8 text-slate-600 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Top Footer Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
-            
+
             {/* Brand Info */}
             <div className="lg:col-span-6 space-y-4">
               <Link href="/" className="flex items-center gap-2.5">
@@ -587,7 +596,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
               <p className="text-xs sm:text-sm text-slate-500 max-w-sm leading-relaxed">
                 Platform ulasan dan rekomendasi bisnis dari orang-orang seperti kamu. Temukan ulasan terpercaya dan layanan yang tepat.
               </p>
-              
+
               {/* Social Icons */}
               <div className="flex items-center gap-3 pt-2">
                 {["Instagram", "TikTok", "X", "YouTube"].map((soc, idx) => (
