@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 
 import Navbar from "@/components/navbar";
-import { fetchBusinesses, mapApiBusinessToUiModel, ApiCategoryFacet, ApiCityFacet } from "@/lib/api-client";
+import { fetchBusinesses, fetchPopularBusinesses, mapApiBusinessToUiModel, ApiCategoryFacet, ApiCityFacet } from "@/lib/api-client";
 import { Business } from "@/lib/mock-data";
 import { slugify, categoryDisplayName } from "@/lib/slug";
 

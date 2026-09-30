@@ -39,7 +39,10 @@ export interface ApiBusinessListItem {
   address: string;
   city: string;
   province: string;
-  category: string;
+  category: string | null;
+  logo_url?: string | null;
+  cover_url?: string | null;
+  is_claimed?: boolean;
   rating: string | number;
   reviews_count: number;
   status?: string;
@@ -353,6 +356,26 @@ export async function fetchSitemapBusinesses(): Promise<ApiSitemapBusinessItem[]
  * so /kategori pages and the sitemap still render something sensible if
  * the backend is unreachable, instead of an empty/broken page.
  */
+
+/**
+ * GET /businesses/popular — endpoint to display popular businesses sorted by rating/reviews
+ */
+export async function fetchPopularBusinesses(): Promise<ApiBusinessListItem[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/businesses/popular`, { cache: "no-store" });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.success && Array.isArray(json?.data)) return json.data;
+      if (Array.isArray(json?.data)) return json.data;
+    }
+  } catch (e) {
+    console.warn("fetchPopularBusinesses API call failed:", e);
+  }
+
+  const fallback = await fetchBusinesses({ limit: 5, sort: "popular" });
+  return fallback.data || [];
+}
+
 export async function fetchCategoryFacets(): Promise<ApiCategoryFacet[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/businesses/categories`, { cache: "no-store" });
