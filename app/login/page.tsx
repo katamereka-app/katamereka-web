@@ -54,13 +54,11 @@ function LoginFormContent() {
       setIsLoading(false);
       setSuccess(true);
 
-      // Target decided from the server-verified session, not a guessable param.
-      const isBusinessContext = !!res.user?.businessRole;
-
-      let targetPath = redirectParam;
-      if (!targetPath) {
-        targetPath = isBusinessContext ? "/dashboard" : "/";
-      }
+      // Land on the site home by default — a business account always has
+      // the "Dashboard" button in the navbar (see navbar.tsx isBusinessUser)
+      // rather than being dropped straight into /dashboard. Only an explicit
+      // redirect param (from a forced-login bounce) overrides this.
+      const targetPath = redirectParam || "/";
 
       setTimeout(() => {
         // Hard navigation, not router.push: the client router cached the
