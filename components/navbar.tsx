@@ -357,14 +357,16 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
                       <span>Profil Sesi Log</span>
                     </Link>
 
-                    <Link
-                      href="/ulasan"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 hover:text-[#008767] transition-colors"
-                    >
-                      <Star className="w-4 h-4 text-slate-400" />
-                      <span>Kelola Ulasan</span>
-                    </Link>
+                    {user.role === "bisnis" && (
+                      <Link
+                        href="/ulasan"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 hover:text-[#008767] transition-colors"
+                      >
+                        <Star className="w-4 h-4 text-slate-400" />
+                        <span>Kelola Ulasan</span>
+                      </Link>
+                    )}
                   </div>
 
                   <div className="pt-1 border-t border-slate-100">
