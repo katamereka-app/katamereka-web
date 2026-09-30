@@ -222,12 +222,6 @@ export default function ProfilePage() {
                       Terus bagikan pengalamanmu dan bantu orang lain membuat keputusan yang lebih baik.
                     </p>
                   </div>
-
-                  {/* Doodle annotation accent */}
-                  <div className="hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-xs px-4 py-2.5 rounded-2xl shadow-sm border border-[#bce4d7] text-xs font-bold text-[#008767] flex-shrink-0 z-10 transform rotate-2">
-                    <Sparkles className="w-4 h-4 text-[#008767]" />
-                    <span>Suara kamu berarti!</span>
-                  </div>
                 </div>
 
                 {/* CARD 2: Ringkasan Aktivitas & Pencapaian (2-Column Grid) */}
