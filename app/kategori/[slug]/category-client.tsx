@@ -212,12 +212,38 @@ export default function CategoryClient({
   }, [sortedBusinesses, currentPage, itemsPerPage]);
 
   const availableCities = useMemo(() => {
-    const listFromProps = (cityList || []).filter(Boolean);
-    const defaultCities = ["Jakarta", "Bandung", "Surabaya", "Bali", "Yogyakarta", "Medan", "Palembang"];
-    const baseList = listFromProps.length > 0 ? listFromProps : defaultCities;
-    const merged = ["Semua Lokasi", ...baseList];
-    return merged.filter((v, i, a) => a.indexOf(v) === i);
-  }, [cityList]);
+    // Extract unique locations strictly from businesses present in this category
+    const extractedCities = uiBusinesses
+      .map((b) => {
+        const loc = (b.location || b.address || "").trim();
+        if (!loc) return "";
+        // Extract city name if formatted like "Palembang, South Sumatra"
+        const primaryCity = loc.split(",")[0].trim();
+        return primaryCity;
+      })
+      .filter(Boolean);
+
+    const uniqueCities = Array.from(new Set(extractedCities));
+    return ["Semua Lokasi", ...uniqueCities];
+  }, [uiBusinesses]);
+
+  const visiblePageNumbers = useMemo(() => {
+    const maxButtons = 5;
+    if (totalPages <= maxButtons) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let end = start + maxButtons - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(1, end - maxButtons + 1);
+    }
+    const pages = [];
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }, [totalPages, currentPage]);
 
   return (
     <div className="space-y-8">
@@ -387,7 +413,7 @@ export default function CategoryClient({
             ‹
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+          {visiblePageNumbers.map((pageNum) => {
             const isActive = currentPage === pageNum;
             return (
               <button

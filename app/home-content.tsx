@@ -44,11 +44,27 @@ interface HomeContentProps {
 
 function getCategoryIconAndColor(categoryRaw: string, index: number) {
   const lower = (categoryRaw || "").toLowerCase();
-  if (lower.includes("hotel") || lower.includes("motel") || lower.includes("accommodation")) {
+
+  if (lower.includes("apartment") || lower.includes("apartemen")) {
+    return { icon: Building2, bgColor: "bg-sky-100/80 text-sky-600" };
+  }
+  if (lower.includes("chalet")) {
+    return { icon: Sparkles, bgColor: "bg-[#e8f6f2] text-[#008767]" };
+  }
+  if (lower.includes("guest_house") || lower.includes("guesthouse") || lower.includes("guest house") || lower.includes("homestay")) {
+    return { icon: Store, bgColor: "bg-amber-100/80 text-amber-600" };
+  }
+  if (lower.includes("hostel")) {
+    return { icon: Bed, bgColor: "bg-pink-100/80 text-pink-600" };
+  }
+  if (lower.includes("hotel") || lower.includes("motel")) {
     return { icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" };
   }
+  if (lower.includes("accommodation") || lower.includes("akomodasi")) {
+    return { icon: Bed, bgColor: "bg-indigo-100/80 text-indigo-600" };
+  }
   if (lower.includes("restaurant") || lower.includes("catering") || lower.includes("makan") || lower.includes("kuliner")) {
-    return { icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" };
+    return { icon: Utensils, bgColor: "bg-orange-100/80 text-orange-600" };
   }
   if (lower.includes("cafe") || lower.includes("coffee") || lower.includes("ngopi")) {
     return { icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" };
@@ -62,17 +78,14 @@ function getCategoryIconAndColor(categoryRaw: string, index: number) {
   if (lower.includes("beauty") || lower.includes("kecantikan") || lower.includes("spa") || lower.includes("perawatan") || lower.includes("health")) {
     return { icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" };
   }
-  if (lower.includes("apartment") || lower.includes("building") || lower.includes("property") || lower.includes("residential")) {
-    return { icon: Building2, bgColor: "bg-indigo-100/80 text-indigo-600" };
-  }
 
   const presets = [
-    { icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
-    { icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
-    { icon: Bed, bgColor: "bg-purple-100/80 text-purple-600" },
-    { icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" },
-    { icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
-    { icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
+    { icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" },
+    { icon: Bed, bgColor: "bg-indigo-100/80 text-indigo-600" },
+    { icon: Building2, bgColor: "bg-sky-100/80 text-sky-600" },
+    { icon: Sparkles, bgColor: "bg-[#e8f6f2] text-[#008767]" },
+    { icon: Store, bgColor: "bg-amber-100/80 text-amber-600" },
+    { icon: Bed, bgColor: "bg-pink-100/80 text-pink-600" },
   ];
   return presets[index % presets.length];
 }
@@ -423,44 +436,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                   const name = categoryDisplayName(catItem.category);
                   const lower = catItem.category.toLowerCase();
 
-                  let IconComp = Building2;
-                  let color = "text-blue-600 bg-blue-50 border-blue-100";
-
-                  if (lower.includes("hotel") || lower.includes("motel")) {
-                    IconComp = Hotel;
-                    color = "text-blue-600 bg-blue-50 border-blue-100";
-                  } else if (lower.includes("apartment")) {
-                    IconComp = Building2;
-                    color = "text-sky-600 bg-sky-50 border-sky-100";
-                  } else if (lower.includes("guest_house") || lower.includes("home stay") || lower.includes("homestay")) {
-                    IconComp = Store;
-                    color = "text-emerald-600 bg-emerald-50 border-emerald-100";
-                  } else if (lower.includes("chalet") || lower.includes("hostel")) {
-                    IconComp = Hotel;
-                    color = "text-amber-600 bg-amber-50 border-amber-100";
-                  } else if (lower.includes("residential")) {
-                    IconComp = Building2;
-                    color = "text-indigo-600 bg-indigo-50 border-indigo-100";
-                  } else if (lower.includes("restaurant") || lower.includes("catering") || lower.includes("cafe")) {
-                    IconComp = Utensils;
-                    color = "text-orange-600 bg-orange-50 border-orange-100";
-                  } else if (lower.includes("car_rental") || lower.includes("rental")) {
-                    IconComp = Wrench;
-                    color = "text-purple-600 bg-purple-50 border-purple-100";
-                  } else if (lower.includes("supermarket") || lower.includes("shopping")) {
-                    IconComp = Package;
-                    color = "text-teal-600 bg-teal-50 border-teal-100";
-                  } else {
-                    const colorSchemes = [
-                      "text-blue-600 bg-blue-50 border-blue-100",
-                      "text-amber-600 bg-amber-50 border-amber-100",
-                      "text-emerald-600 bg-emerald-50 border-emerald-100",
-                      "text-purple-600 bg-purple-50 border-purple-100",
-                      "text-sky-600 bg-sky-50 border-sky-100",
-                      "text-indigo-600 bg-indigo-50 border-indigo-100",
-                    ];
-                    color = colorSchemes[i % colorSchemes.length];
-                  }
+                  const { icon: IconComp, bgColor: iconBgColor } = getCategoryIconAndColor(catItem.category, i);
 
                   return (
                     <Link
@@ -468,7 +444,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                       href={`/kategori/${slugify(catItem.category)}`}
                       className="group/card min-w-[calc((100%-1rem)/2)] sm:min-w-[calc((100%-2*1rem)/3)] md:min-w-[calc((100%-3*1rem)/4)] lg:min-w-[calc((100%-5*1rem)/6)] flex-1 bg-slate-50/60 hover:bg-white rounded-2xl border border-slate-200/80 p-5 text-center transition-all hover:shadow-lg hover:border-[#008767]/30 flex flex-col items-center justify-center space-y-3 shrink-0"
                     >
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${color} group-hover/card:scale-110 transition-transform shadow-2xs`}>
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${iconBgColor} group-hover/card:scale-110 transition-transform shadow-2xs`}>
                         <IconComp className="w-7 h-7" />
                       </div>
                       <div>
