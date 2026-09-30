@@ -40,116 +40,29 @@ const CATEGORY_TABS = [
 
 type CategoryKey = (typeof CATEGORY_TABS)[number]["key"];
 
-const SAVED_ITEMS = [
-  {
-    id: 1,
-    name: "Hotel Santika Premiere",
-    slug: "hotel-santika-premiere",
-    category: "hotel",
-    categoryLabel: "Hotel",
-    categoryType: "tempat",
-    rating: 4.5,
-    reviews: "2.8K ulasan",
-    location: "Jakarta",
-    verified: true,
-    initial: "HS",
-    bgColor: "bg-blue-50 text-blue-600 border-blue-100",
-    coverBg: "from-blue-50 to-blue-100",
-    coverIcon: Hotel,
-    coverColor: "text-blue-300",
-  },
-  {
-    id: 2,
-    name: "Traveloka",
-    slug: "traveloka",
-    category: "travel",
-    categoryLabel: "Travel & Wisata",
-    categoryType: "bisnis",
-    rating: 4.6,
-    reviews: "12.4K ulasan",
-    location: "Indonesia",
-    verified: true,
-    initial: "T",
-    bgColor: "bg-sky-50 text-sky-600 border-sky-100",
-    coverBg: "from-sky-50 to-sky-100",
-    coverIcon: Plane,
-    coverColor: "text-sky-300",
-  },
-  {
-    id: 3,
-    name: "Tokopedia",
-    slug: "tokopedia",
-    category: "e-commerce",
-    categoryLabel: "E-commerce",
-    categoryType: "bisnis",
-    rating: 4.6,
-    reviews: "12.4K ulasan",
-    location: "Indonesia",
-    verified: true,
-    initial: "T",
-    bgColor: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    coverBg: "from-emerald-50 to-emerald-100",
-    coverIcon: ShoppingBag,
-    coverColor: "text-emerald-300",
-  },
-  {
-    id: 4,
-    name: "iPhone 17",
-    slug: "iphone-17",
-    category: "elektronik",
-    categoryLabel: "Elektronik",
-    categoryType: "produk",
-    rating: 4.8,
-    reviews: "3.5K ulasan",
-    location: "Jakarta",
-    verified: true,
-    initial: "",
-    bgColor: "bg-slate-100 text-slate-700 border-slate-200",
-    coverBg: "from-slate-50 to-slate-100",
-    coverIcon: Smartphone,
-    coverColor: "text-slate-300",
-  },
-  {
-    id: 5,
-    name: "Shopee",
-    slug: "shopee",
-    category: "e-commerce",
-    categoryLabel: "E-commerce",
-    categoryType: "bisnis",
-    rating: 4.5,
-    reviews: "10.3K ulasan",
-    location: "Indonesia",
-    verified: true,
-    initial: "S",
-    bgColor: "bg-orange-50 text-orange-600 border-orange-100",
-    coverBg: "from-orange-50 to-orange-100",
-    coverIcon: ShoppingBag,
-    coverColor: "text-orange-300",
-  },
-  {
-    id: 6,
-    name: "Indomaret",
-    slug: "indomaret",
-    category: "minimarket",
-    categoryLabel: "Minimarket",
-    categoryType: "tempat",
-    rating: 4.3,
-    reviews: "5.7K ulasan",
-    location: "Indonesia",
-    verified: true,
-    initial: "I",
-    bgColor: "bg-red-50 text-red-600 border-red-100",
-    coverBg: "from-red-50 to-red-100",
-    coverIcon: Store,
-    coverColor: "text-red-300",
-  },
-];
+const SAVED_ITEMS: Array<{
+  id: number;
+  name: string;
+  slug: string;
+  category: string;
+  categoryLabel: string;
+  categoryType: string;
+  rating: number;
+  reviews: string;
+  location: string;
+  verified: boolean;
+  initial: string;
+  bgColor: string;
+  coverBg: string;
+  coverIcon: any;
+  coverColor: string;
+}> = [];
 
 export default function SavedPage() {
   const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState<CategoryKey>("semua");
   const [searchQuery, setSearchQuery] = useState("");
-  const [savedIds, setSavedIds] = useState<number[]>(SAVED_ITEMS.map((i) => i.id));
+  const [savedIds, setSavedIds] = useState<number[]>([]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
