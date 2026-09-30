@@ -275,8 +275,8 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 Temukan bisnis berdasarkan kebutuhanmu, bukan hanya berdasarkan nama atau kategori.
               </p>
 
-              {/* Newly attached Illustration image centered directly under text block */}
-              <div className="pt-6 sm:pt-8 w-full flex justify-center items-center">
+              {/* Newly attached Illustration image shifted slightly to the left */}
+              <div className="pt-6 sm:pt-8 w-full flex justify-center lg:justify-start items-center -ml-3 sm:-ml-6 lg:-ml-10">
                 <img
                   src="/ilus-search.png"
                   alt="Cari Sesuai Kebutuhan"
