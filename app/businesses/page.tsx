@@ -581,18 +581,7 @@ export default function BusinessesPage() {
                 Suara nyata, keputusan lebih baik. Platform ulasan terpercaya di Indonesia.
               </p>
               
-              {/* Social Icons */}
-              <div className="flex items-center gap-3 pt-2">
-                {["Instagram", "TikTok", "X", "YouTube"].map((soc, idx) => (
-                  <button
-                    key={idx}
-                    aria-label={soc}
-                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-[#008767] hover:text-white flex items-center justify-center text-slate-600 text-xs font-semibold transition-colors"
-                  >
-                    {soc[0]}
-                  </button>
-                ))}
-              </div>
+
             </div>
 
             {/* Links Column 1: Tautan Cepat */}

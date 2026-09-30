@@ -575,18 +575,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 Platform ulasan dan rekomendasi bisnis dari orang-orang seperti kamu. Temukan ulasan terpercaya dan layanan yang tepat.
               </p>
 
-              {/* Social Icons */}
-              <div className="flex items-center gap-3 pt-2">
-                {["Instagram", "TikTok", "X", "YouTube"].map((soc, idx) => (
-                  <button
-                    key={idx}
-                    aria-label={soc}
-                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-[#008767] hover:text-white flex items-center justify-center text-slate-600 text-xs font-semibold transition-colors"
-                  >
-                    {soc[0]}
-                  </button>
-                ))}
-              </div>
+
             </div>
 
             {/* Links Column 1: Tautan Cepat */}
