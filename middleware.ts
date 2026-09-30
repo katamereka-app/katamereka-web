@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isBusinessHost } from "@/lib/site-config";
+import { isBusinessHost, BUSINESS_SITE_URL } from "@/lib/site-config";
+import { verifySessionToken } from "@/lib/verify-session-token";
 
-// Paths that require an authenticated session. Checked server-side here so
-// an unauthenticated visitor never receives the page HTML (a client-side
-// redirect after hydration would still leak the shell + a 200 status).
-const PROTECTED_PATH_PREFIXES = ["/dashboard", "/settings"];
+// Business-owner area: needs a real, signed business membership — a plain
+// logged-in customer must never land here (see profile popup showing a
+// business dashboard to a "Customer" role account).
+const BUSINESS_PATH_PREFIXES = ["/dashboard", "/settings"];
+// Platform admin area: needs PlatformRole ADMIN/SUPER_ADMIN, verified from
+// the signed token — not merely "a session cookie exists".
+const ADMIN_PATH_PREFIXES = ["/admin"];
 
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PATH_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
+function matchesPrefix(pathname: string, prefixes: string[]): boolean {
+  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const hostname = request.headers.get("host") || "";
   const { pathname } = request.nextUrl;
 
@@ -24,15 +26,28 @@ export function middleware(request: NextRequest) {
     requestHeaders.set("x-is-business-subdomain", "true");
   }
 
-  if (isProtectedPath(pathname)) {
-    const hasSession = request.cookies.get("km_session")?.value === "1";
-    if (!hasSession) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      if (isBusinessSubdomain) {
-        loginUrl.searchParams.set("role", "bisnis");
+  const needsBusinessAccess = matchesPrefix(pathname, BUSINESS_PATH_PREFIXES);
+  const needsAdminAccess = matchesPrefix(pathname, ADMIN_PATH_PREFIXES);
+
+  if (needsBusinessAccess || needsAdminAccess) {
+    const token = request.cookies.get("km_session")?.value;
+    const payload = token ? await verifySessionToken(token) : null;
+
+    if (needsAdminAccess) {
+      const isPlatformAdmin = payload?.role === "ADMIN" || payload?.role === "SUPER_ADMIN";
+      if (!isPlatformAdmin) {
+        const loginUrl = new URL("/superadmin/login", BUSINESS_SITE_URL);
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
       }
-      return NextResponse.redirect(loginUrl);
+    } else if (needsBusinessAccess) {
+      const isBusinessMember = !!payload?.businessRole;
+      if (!isBusinessMember) {
+        const loginUrl = new URL("/login", BUSINESS_SITE_URL);
+        loginUrl.searchParams.set("role", "bisnis");
+        loginUrl.searchParams.set("redirect", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
     }
   }
 

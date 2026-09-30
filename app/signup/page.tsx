@@ -187,6 +187,16 @@ function SignupFormContent() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e8f6f2] via-slate-50 to-[#f4faf7] flex items-center justify-center p-3 sm:p-5 relative overflow-hidden font-sans">
+      {/* Back — leave the signup page entirely, not the OTP step-back below */}
+      <button
+        type="button"
+        onClick={() => router.back()}
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 inline-flex items-center gap-1.5 rounded-full bg-white/80 backdrop-blur px-3.5 py-2 text-xs font-bold text-slate-600 shadow-sm border border-slate-200/80 hover:text-slate-900 hover:bg-white transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        <span>Kembali</span>
+      </button>
+
       {/* Background Decor Circles */}
       <div className="absolute -top-32 -left-32 w-[450px] h-[450px] rounded-full bg-[#008767]/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -right-32 w-[450px] h-[450px] rounded-full bg-[#008767]/12 blur-3xl pointer-events-none" />
