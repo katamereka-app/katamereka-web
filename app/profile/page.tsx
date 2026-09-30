@@ -27,7 +27,6 @@ import {
   ExternalLink,
   Home,
   Trash2,
-  Edit3,
 } from "lucide-react";
 import {
   fetchProfileSummary,
@@ -452,12 +451,6 @@ export default function ProfilePage() {
                                 <StatusBadge status={review.status} />
                                 <p className="text-[10px] text-slate-400">{formatRelativeDate(review.createdAt)}</p>
                                 <div className="flex items-center gap-2 pt-1">
-                                  <Link
-                                    href={`/review?business=${review.business.slug}`}
-                                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#008767] hover:underline"
-                                  >
-                                    <Edit3 className="w-3 h-3" />Edit
-                                  </Link>
                                   <button
                                     onClick={() => setConfirmDeleteId(review.id)}
                                     disabled={deletingReviewId === review.id}
