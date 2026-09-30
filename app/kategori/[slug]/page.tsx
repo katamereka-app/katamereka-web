@@ -13,7 +13,23 @@ interface PageProps {
 
 async function findCategory(slug: string): Promise<ApiCategoryFacet | null> {
   const facets = await fetchCategoryFacets();
-  return facets.find((c) => slugify(c.category) === slug) || null;
+  const targetSlug = slugify(slug);
+
+  // 1. Direct match with facets from DB / API
+  const found = facets.find((c) => slugify(c.category) === targetSlug);
+  if (found) return found;
+
+  // 2. Match with raw category name or category replacing dashes with dots
+  const dotted = slug.replace(/-/g, ".");
+  const foundDotted = facets.find((c) => c.category === dotted || c.category === slug);
+  if (foundDotted) return foundDotted;
+
+  // 3. Fallback for valid category slugs even if count is 0
+  if (slug) {
+    return { category: dotted, count: 0 };
+  }
+
+  return null;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -39,43 +55,33 @@ export default async function KategoriPage({ params }: PageProps) {
   const name = categoryDisplayName(category.category);
   const { data: businesses } = await fetchBusinesses({ category: category.category, limit: 50 });
   const cityFacets = await fetchCityFacets();
-  const cityList = cityFacets.slice(0, 5).map((c) => c.city);
+  const cityList = cityFacets.slice(0, 6).map((c) => c.city);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans text-slate-800 antialiased">
+    <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans text-slate-800 antialiased">
       <Navbar />
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 w-full">
-        {/* Breadcrumb */}
-        <nav className="text-xs text-slate-500 flex items-center gap-1.5" aria-label="Breadcrumb">
-          <Link href="/" className="hover:text-[#008767] transition-colors">Beranda</Link>
-          <span>›</span>
-          <Link href="/businesses" className="hover:text-[#008767] transition-colors">Kategori</Link>
-          <span>›</span>
-          <span className="text-slate-700 font-medium">{name}</span>
-        </nav>
-
-        {/* Hero Section */}
-        <div className="space-y-2">
-          <p className="text-xs font-bold text-[#008767] uppercase tracking-wider">
-            KATEGORI {name.toUpperCase()}
-          </p>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight">
-            {name} di Indonesia
-          </h1>
-          <p className="text-sm text-slate-500 max-w-2xl leading-relaxed">
-            Temukan {name.toLowerCase()} berdasarkan lokasi, rating, dan pengalaman pelanggan di Katamereka.
-          </p>
-        </div>
-
-        {/* Client Interactive Search, Filters & Cards Grid */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
+        {/* Client Interactive Category View */}
         <CategoryClient
           categoryName={name}
           categorySlug={slug}
-          initialBusinesses={businesses}
+          initialBusinesses={businesses || []}
           cityList={cityList}
         />
       </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-slate-200/80 pt-12 pb-8 text-slate-600 text-sm mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+            <p>© 2025 Katamereka. Semua hak dilindungi.</p>
+            <Link href="/" className="font-semibold text-[#008767] hover:underline">
+              Kembali ke Utama
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

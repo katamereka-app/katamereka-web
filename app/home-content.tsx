@@ -307,12 +307,12 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 Temukan bisnis berdasarkan kebutuhanmu, bukan hanya berdasarkan nama atau kategori.
               </p>
 
-              {/* Newly attached Illustration image aligned proportionally to the left */}
-              <div className="pt-4 sm:pt-6 w-full flex justify-center lg:justify-start items-center -ml-2 sm:-ml-4 lg:-ml-6">
+              {/* Illustration image shifted slightly left for optical alignment directly below title */}
+              <div className="pt-4 sm:pt-6 w-full flex justify-center items-center -ml-3 sm:-ml-20">
                 <img
                   src="/ilus-search.png"
                   alt="Cari Sesuai Kebutuhan"
-                  className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-auto object-contain transform transition-transform"
+                  className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-auto object-contain"
                 />
               </div>
             </div>
@@ -333,12 +333,12 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                         ...getCategoryIconAndColor(cat.category, idx)
                       }))
                     : [
-                        { title: "Hotel", href: "/kategori/accommodation.hotel", icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" },
-                        { title: "Restoran", href: "/kategori/catering.restaurant", icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
-                        { title: "Kafe & Ngopi", href: "/kategori/catering.cafe", icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
-                        { title: "Supermarket", href: "/kategori/shop.supermarket", icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
+                        { title: "Hotel", href: `/kategori/${slugify("accommodation.hotel")}`, icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" },
+                        { title: "Restoran", href: `/kategori/${slugify("catering.restaurant")}`, icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
+                        { title: "Kafe & Ngopi", href: `/kategori/${slugify("catering.cafe")}`, icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
+                        { title: "Supermarket", href: `/kategori/${slugify("shop.supermarket")}`, icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
                         { title: "Cari Jasa", href: "/businesses", icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" },
-                        { title: "Perawatan", href: "/kategori/kecantikan", icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
+                        { title: "Perawatan", href: `/kategori/${slugify("beauty")}`, icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
                       ];
 
                   return dynamicDisplayCards.map((item, idx) => {
