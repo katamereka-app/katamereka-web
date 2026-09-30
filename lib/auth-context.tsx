@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { API_BASE_URL } from "./api-client";
 
 export type UserRole = "customer" | "bisnis";
+export type PlatformRole = "USER" | "ADMIN" | "SUPER_ADMIN";
+export type BusinessMemberRole = "OWNER" | "ADMIN" | "MEMBER" | null;
 
 export interface UserProfile {
   id?: string;
@@ -14,6 +16,9 @@ export interface UserProfile {
   joinedDate: string;
   verified: boolean;
   role: UserRole;
+  // Signed, server-verified claims — safe to use for UI gating decisions.
+  platformRole: PlatformRole;
+  businessRole: BusinessMemberRole;
   status?: string;
   accessToken?: string;
   reviewCount: number;
@@ -46,6 +51,8 @@ const emptyDefaultUser: UserProfile = {
   joinedDate: "-",
   verified: false,
   role: "customer",
+  platformRole: "USER",
+  businessRole: null,
   reviewCount: 0,
   helpfulCount: 0,
   businessCount: 0,
@@ -61,9 +68,13 @@ const AuthContext = createContext<AuthContextType>({
   logout: () => {},
 });
 
-function setSessionCookie() {
+function setSessionCookie(token: string) {
   try {
-    document.cookie = "km_session=1; path=/; max-age=2592000; SameSite=Lax";
+    // The cookie carries the actual signed JWT (not a bare "1" flag) so
+    // middleware.ts can cryptographically verify role/businessRole at the
+    // edge instead of trusting an unsigned value the client could forge.
+    const secure = typeof window !== "undefined" && window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `km_session=${token}; path=/; max-age=2592000; SameSite=Lax${secure}`;
   } catch (e) {
     // ignore
   }
@@ -86,12 +97,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const stored = localStorage.getItem("katamereka_active_user");
       if (stored) {
         const parsed = JSON.parse(stored);
-        setUser({
-          ...parsed,
-          role: parsed.role || "customer",
-        });
-        setIsLoggedIn(true);
-        setSessionCookie();
+        if (parsed.accessToken) {
+          setUser({
+            ...parsed,
+            role: parsed.role || "customer",
+            platformRole: parsed.platformRole || "USER",
+            businessRole: parsed.businessRole ?? null,
+          });
+          setIsLoggedIn(true);
+          setSessionCookie(parsed.accessToken);
+        }
       }
     } catch (e) {
       // Ignore fallback
@@ -119,33 +134,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
       }
 
+      if (!data.accessToken) {
+        return { success: false, message: "Login gagal: server tidak mengembalikan sesi" };
+      }
+
       const returnedUser = data.user || {};
       const lowerEmail = email.trim().toLowerCase();
 
-      let userRole: UserRole = "customer";
-      if (returnedUser.role === "bisnis" || returnedUser.role === "BISNIS") {
-        userRole = "bisnis";
-      } else {
-        try {
-          const storedReg = localStorage.getItem(`registered_user_${lowerEmail}`);
-          if (storedReg) {
-            const parsedReg = JSON.parse(storedReg);
-            if (parsedReg.role === "bisnis") {
-              userRole = "bisnis";
-            }
-          } else {
-            const lastReg = localStorage.getItem("last_registered_user");
-            if (lastReg) {
-              const parsedLast = JSON.parse(lastReg);
-              if (parsedLast.email?.toLowerCase() === lowerEmail && parsedLast.role === "bisnis") {
-                userRole = "bisnis";
-              }
-            }
-          }
-        } catch (e) {
-          // ignore
-        }
-      }
+      // Ground truth comes from the server now — role & businessRole are
+      // signed into the JWT (see auth.service.ts), never guessed client-side.
+      const platformRole: PlatformRole = returnedUser.role || "USER";
+      const businessRole: BusinessMemberRole = returnedUser.businessRole ?? null;
+      const userRole: UserRole = businessRole ? "bisnis" : "customer";
 
       const userName = returnedUser.name || email.split("@")[0];
       const initials = userName
@@ -164,20 +164,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         joinedDate: "Sep 2026",
         verified: true,
         role: userRole,
+        platformRole,
+        businessRole,
         status: returnedUser.status || "ACTIVE",
         accessToken: data.accessToken,
         reviewCount: 0,
         helpfulCount: 0,
-        businessCount: userRole === "bisnis" ? 1 : 0,
+        businessCount: businessRole ? 1 : 0,
       };
 
       setUser(loadedUser);
       setIsLoggedIn(true);
-      setSessionCookie();
+      setSessionCookie(data.accessToken);
 
-      if (data.accessToken) {
-        localStorage.setItem("accessToken", data.accessToken);
-      }
+      localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("katamereka_active_user", JSON.stringify(loadedUser));
 
       return {
@@ -187,48 +187,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         accessToken: data.accessToken,
       };
     } catch (e) {
-      const namePart = email.split("@")[0] || "-";
-      const initials = namePart !== "-" ? namePart.substring(0, 2).toUpperCase() : "-";
-      const lowerEmail = email.trim().toLowerCase();
-
-      let userRole: UserRole = "customer";
-      try {
-        const storedReg = localStorage.getItem(`registered_user_${lowerEmail}`);
-        if (storedReg) {
-          const parsedReg = JSON.parse(storedReg);
-          if (parsedReg.role === "bisnis") {
-            userRole = "bisnis";
-          }
-        }
-      } catch (err) {
-        // ignore
-      }
-
-      const fallbackUser: UserProfile = {
-        id: "",
-        name: namePart,
-        username: namePart !== "-" ? namePart.toLowerCase() : "-",
-        email: email,
-        initials: initials,
-        joinedDate: "Sep 2026",
-        verified: true,
-        role: userRole,
-        status: "ACTIVE",
-        reviewCount: 0,
-        helpfulCount: 0,
-        businessCount: userRole === "bisnis" ? 1 : 0,
-      };
-
-      setUser(fallbackUser);
-      setIsLoggedIn(true);
-      setSessionCookie();
-      localStorage.setItem("katamereka_active_user", JSON.stringify(fallbackUser));
-
-      return {
-        success: true,
-        message: "Login berhasil",
-        user: fallbackUser,
-      };
+      // No fail-open: a network error must never look like a successful
+      // login — the old fallback here fabricated a session for any input.
+      return { success: false, message: "Terjadi kesalahan koneksi ke server" };
     }
   };
 
@@ -244,18 +205,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const lowerEmail = email.trim().toLowerCase();
-
-    const regUserData = {
-      name: name.trim(),
-      email: lowerEmail,
-      role: role,
-    };
-    try {
-      localStorage.setItem(`registered_user_${lowerEmail}`, JSON.stringify(regUserData));
-      localStorage.setItem("last_registered_user", JSON.stringify(regUserData));
-    } catch (e) {
-      // ignore
-    }
 
     try {
       const res = await fetch(`${API_BASE_URL}/auth/register`, {

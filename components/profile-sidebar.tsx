@@ -86,10 +86,18 @@ export function ProfileSidebar({
 
             <div className="flex w-full items-center justify-between rounded-xl border px-3 py-2.5">
               <span className="flex items-center gap-2">
-                <span className="size-2 shrink-0 rounded-full bg-emerald-500" />
+                <span
+                  className={`size-2 shrink-0 rounded-full ${
+                    user?.platformRole === "ADMIN" || user?.platformRole === "SUPER_ADMIN"
+                      ? "bg-emerald-500"
+                      : "bg-slate-300"
+                  }`}
+                />
                 <span className="text-sm font-medium">Status Admin</span>
               </span>
-              <span className="text-sm text-muted-foreground">Aktif</span>
+              <span className="text-sm text-muted-foreground">
+                {user?.platformRole === "ADMIN" || user?.platformRole === "SUPER_ADMIN" ? "Aktif" : "Nonaktif"}
+              </span>
             </div>
 
             <Select
