@@ -270,11 +270,13 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                     <h3 className="font-bold text-slate-900 group-hover:text-[#008767] transition-colors line-clamp-1">
                       {biz.name}
                     </h3>
-                    <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold mt-1">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span>{biz.rating}</span>
-                      <span className="text-slate-400 font-normal">({biz.reviewCountFormatted})</span>
-                    </div>
+                    {biz.reviewCount > 0 && biz.rating > 0 ? (
+                      <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold mt-1">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span>{biz.rating}</span>
+                        <span className="text-slate-400 font-normal">({biz.reviewCountFormatted})</span>
+                      </div>
+                    ) : null}
                     <p className="text-xs text-slate-500 mt-1.5 font-medium line-clamp-1">
                       {biz.category}
                     </p>

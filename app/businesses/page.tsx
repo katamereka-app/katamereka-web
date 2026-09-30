@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import { Business } from "@/lib/mock-data";
-import { fetchBusinesses, mapApiBusinessToUiModel } from "@/lib/api-client";
+import { fetchBusinesses, fetchCategoryFacets, mapApiBusinessToUiModel } from "@/lib/api-client";
+import { categoryDisplayName, isRealBusinessCategory } from "@/lib/slug";
 import {
   Search,
   ChevronDown,
@@ -39,20 +40,30 @@ export default function BusinessesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [fetchedCategories, setFetchedCategories] = useState<string[]>([]);
 
-  // Filter Categories
-  const categories = [
+  // Default Categories fallback
+  const defaultCategories = [
     "Semua Kategori",
-    "Restoran",
     "Hotel",
+    "Akomodasi",
+    "Apartemen",
+    "Chalet",
+    "Guest House",
+    "Hostel",
+    "Restoran",
+    "Kafe",
+    "Supermarket",
     "Kecantikan",
     "Elektronik",
-    "Travel & Wisata",
     "Otomotif",
+    "Jasa",
     "Fashion",
     "Kesehatan",
     "Pendidikan"
   ];
+
+  const categories = fetchedCategories.length > 0 ? fetchedCategories : defaultCategories;
 
   // Filter Locations
   const locations = [
@@ -74,6 +85,26 @@ export default function BusinessesPage() {
     { label: "2+ Bintang", min: 2 },
     { label: "1+ Bintang", min: 1 }
   ];
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const facets = await fetchCategoryFacets();
+        if (facets && facets.length > 0) {
+          const names = facets
+            .filter((f) => isRealBusinessCategory(f.category))
+            .map((f) => categoryDisplayName(f.category))
+            .filter((v, i, a) => v && a.indexOf(v) === i);
+          if (names.length > 0) {
+            setFetchedCategories(["Semua Kategori", ...names]);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed fetching category facets:", err);
+      }
+    }
+    loadCategories();
+  }, []);
 
   useEffect(() => {
     async function loadApiBusinesses() {
@@ -326,18 +357,39 @@ export default function BusinessesPage() {
                   Menampilkan <span className="font-bold text-slate-900">{filteredBusinesses.length}</span> bisnis
                 </p>
 
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-2 text-xs text-slate-600">
-                  <span>Urutkan:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-semibold text-slate-800 outline-none focus:border-[#008767]"
-                  >
-                    <option value="Terpopuler">Terpopuler</option>
-                    <option value="Rating Tertinggi">Rating Tertinggi</option>
-                    <option value="Ulasan Terbanyak">Ulasan Terbanyak</option>
-                  </select>
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Category Filter Dropdown */}
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
+                    <span className="font-medium text-slate-500">Kategori:</span>
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
+                    >
+                      {categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-2 text-xs text-slate-600">
+                    <span className="font-medium text-slate-500">Urutkan:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
+                    >
+                      <option value="Terpopuler">Terpopuler</option>
+                      <option value="Rating Tertinggi">Rating Tertinggi</option>
+                      <option value="Ulasan Terbanyak">Ulasan Terbanyak</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

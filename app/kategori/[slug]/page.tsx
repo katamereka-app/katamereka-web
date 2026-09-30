@@ -55,7 +55,7 @@ export default async function KategoriPage({ params }: PageProps) {
   const name = categoryDisplayName(category.category);
   const { data: businesses } = await fetchBusinesses({ category: category.category, limit: 50 });
   const cityFacets = await fetchCityFacets();
-  const cityList = cityFacets.slice(0, 6).map((c) => c.city);
+  const cityList = cityFacets.map((c) => c.city).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans text-slate-800 antialiased">

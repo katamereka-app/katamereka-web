@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   Star,
@@ -73,8 +73,10 @@ export default function CategoryClient({
   cityList,
 }: CategoryClientProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCity, setSelectedCity] = useState("Semua");
+  const [selectedCity, setSelectedCity] = useState("Semua Lokasi");
   const [sortBy, setSortBy] = useState("Terpopuler");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const uiBusinesses = useMemo(() => {
     if (initialBusinesses && initialBusinesses.length > 0) {
@@ -180,6 +182,7 @@ export default function CategoryClient({
 
       const matchCity =
         selectedCity === "Semua" ||
+        selectedCity === "Semua Lokasi" ||
         b.location.toLowerCase().includes(selectedCity.toLowerCase()) ||
         (b.address || "").toLowerCase().includes(selectedCity.toLowerCase());
 
@@ -197,9 +200,22 @@ export default function CategoryClient({
     return list;
   }, [filteredBusinesses, sortBy]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCity, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedBusinesses.length / itemsPerPage));
+
+  const paginatedBusinesses = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return sortedBusinesses.slice(start, start + itemsPerPage);
+  }, [sortedBusinesses, currentPage, itemsPerPage]);
+
   const availableCities = useMemo(() => {
-    const defaultCities = ["Jakarta", "Bandung", "Bali", "Surabaya", "Yogyakarta", "Medan"];
-    const merged = ["Semua", ...defaultCities, ...cityList];
+    const listFromProps = (cityList || []).filter(Boolean);
+    const defaultCities = ["Jakarta", "Bandung", "Surabaya", "Bali", "Yogyakarta", "Medan", "Palembang"];
+    const baseList = listFromProps.length > 0 ? listFromProps : defaultCities;
+    const merged = ["Semua Lokasi", ...baseList];
     return merged.filter((v, i, a) => a.indexOf(v) === i);
   }, [cityList]);
 
@@ -208,96 +224,75 @@ export default function CategoryClient({
       
       {/* ── HERO BANNER HEADER ── */}
       <div className="relative overflow-hidden bg-gradient-to-r from-emerald-50/70 via-teal-50/40 to-slate-50 rounded-3xl p-6 sm:p-10 border border-emerald-100/80 shadow-xs">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          
-          {/* Left Side: Headline & Integrated Search */}
-          <div className="lg:col-span-7 space-y-4">
-            <div>
-              <span className="inline-block text-[11px] font-bold text-[#008767] bg-[#e8f6f2] px-3 py-1 rounded-md border border-[#c4ebde] mb-3 tracking-wider uppercase">
-                KATEGORI
-              </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                {categoryName} di Indonesia
-              </h1>
-            </div>
-
-            <p className="text-sm sm:text-base text-slate-600 max-w-xl leading-relaxed">
-              Temukan {categoryName.toLowerCase()} terbaik di berbagai kota, lengkap dengan informasi, ulasan, dan rating dari pelanggan Katamereka.
-            </p>
-
-            {/* Integrated Search Box */}
-            <div className="pt-2 max-w-xl">
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200/90 flex items-center gap-2 focus-within:ring-2 focus-within:ring-[#008767]/30 transition-all"
-              >
-                <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={`Cari nama ${categoryName.toLowerCase()} atau lokasi...`}
-                  className="w-full bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400 text-sm py-1 font-medium"
-                />
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white text-xs sm:text-sm font-bold shrink-0 transition-all cursor-pointer shadow-xs"
-                >
-                  Cari
-                </button>
-              </form>
-            </div>
+        <div className="max-w-3xl space-y-4">
+          <div>
+            <span className="inline-block text-[11px] font-bold text-[#008767] bg-[#e8f6f2] px-3 py-1 rounded-md border border-[#c4ebde] mb-3 tracking-wider uppercase">
+              KATEGORI
+            </span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+              {categoryName} di Indonesia
+            </h1>
           </div>
 
-          {/* Right Side: Visual Image Card with Floating Badge */}
-          <div className="lg:col-span-5 hidden lg:flex justify-center relative">
-            <div className="relative w-full max-w-sm rounded-2xl overflow-hidden shadow-lg border border-slate-200/80 bg-white">
-              <img
-                src={getCategoryHeroCover(categoryName)}
-                alt={categoryName}
-                className="w-full h-56 object-cover"
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+            Temukan {categoryName.toLowerCase()} terbaik di berbagai kota, lengkap dengan informasi, ulasan, dan rating dari pelanggan Katamereka.
+          </p>
+
+          {/* Integrated Search Box */}
+          <div className="pt-2 max-w-xl">
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="bg-white p-2 rounded-2xl shadow-sm border border-slate-200/90 flex items-center gap-2 focus-within:ring-2 focus-within:ring-[#008767]/30 transition-all"
+            >
+              <Search className="w-5 h-5 text-slate-400 ml-3 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={`Cari nama ${categoryName.toLowerCase()} atau lokasi...`}
+                className="w-full bg-transparent border-none outline-none text-slate-800 placeholder:text-slate-400 text-sm py-1 font-medium"
               />
-              <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3.5 py-2 rounded-xl shadow-md border border-slate-100 text-xs space-y-0.5">
-                <div className="flex items-center gap-1 font-bold text-slate-900">
-                  <span className="text-emerald-500">⭐</span>
-                  <span>{categoryName} Terbaik</span>
-                </div>
-                <p className="text-[10px] text-slate-400 font-medium">Berdasarkan ulasan pelanggan</p>
-              </div>
-            </div>
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white text-xs sm:text-sm font-bold shrink-0 transition-all cursor-pointer shadow-xs"
+              >
+                Cari
+              </button>
+            </form>
           </div>
-
         </div>
       </div>
 
-      {/* ── CITY FILTER PILLS & SORT DROPDOWN BAR ── */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* City Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          {availableCities.map((city) => {
-            const isActive = selectedCity === city;
-            return (
-              <button
-                key={city}
-                type="button"
-                onClick={() => setSelectedCity(city)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-[#008767] text-white shadow-xs"
-                    : "bg-white border border-slate-200/90 text-slate-600 hover:border-[#008767]/40 hover:text-[#008767]"
-                }`}
-              >
-                {city}
-              </button>
-            );
-          })}
-        </div>
+      {/* ── LOCATION FILTER & SORT DROPDOWN BAR ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:px-6 sm:py-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+        {/* Count / Info */}
+        <p className="text-xs sm:text-sm font-medium text-slate-600">
+          Menampilkan <span className="font-bold text-slate-900">{sortedBusinesses.length}</span> {categoryName.toLowerCase()}
+        </p>
 
-        {/* Sort Dropdown */}
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          <div className="flex items-center gap-2 text-xs text-slate-600 bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 shadow-2xs">
+        {/* Dropdowns Container */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Location Filter Dropdown */}
+          <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
+            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+            <span className="font-medium text-slate-500">Lokasi:</span>
+            <select
+              value={selectedCity}
+              onChange={(e) => setSelectedCity(e.target.value)}
+              className="bg-transparent font-bold text-slate-800 outline-none cursor-pointer pr-1"
+            >
+              {availableCities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5">
             <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-medium text-slate-500">Urutkan</span>
+            <span className="font-medium text-slate-500">Urutkan:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
@@ -319,39 +314,39 @@ export default function CategoryClient({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {sortedBusinesses.map((biz, idx) => (
+          {paginatedBusinesses.map((biz, idx) => (
             <div
               key={biz.id || idx}
-              className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:border-[#008767]/30 transition-all flex flex-col justify-between"
+              className="group bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:border-[#008767]/30 transition-all flex flex-col justify-between"
             >
-              <div>
-                {/* Top Cover Image Container */}
-                <div className="relative h-48 w-full overflow-hidden bg-slate-100">
-                  <img
-                    src={(biz as any).coverUrl || getCardImage(categoryName, idx)}
-                    alt={biz.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-700 shadow-sm border border-slate-100 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#008767] fill-[#008767]/10" />
+              <div className="space-y-3">
+                {/* Card Top: Initials & Verified Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#008767] border border-emerald-100 font-extrabold text-sm flex items-center justify-center shrink-0">
+                    {biz.initials || biz.name.charAt(0)}
+                  </div>
+                  <div className="bg-emerald-50 text-[#008767] px-2.5 py-1 rounded-full text-[11px] font-semibold border border-emerald-200/60 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Terverifikasi</span>
                   </div>
                 </div>
 
                 {/* Card Info */}
-                <div className="p-5 space-y-2">
+                <div className="space-y-2">
                   <h3 className="font-bold text-slate-900 text-base group-hover:text-[#008767] transition-colors line-clamp-1">
                     {biz.name}
                   </h3>
 
-                  {/* Rating & Review Count */}
-                  <div className="flex items-center gap-1.5 text-xs">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <span className="font-bold text-slate-900">{biz.rating || 4.5}</span>
-                    <span className="text-slate-400 font-medium">
-                      ({biz.reviewCountFormatted || `${biz.reviewCount || 100} ulasan`})
-                    </span>
-                  </div>
+                  {/* Rating & Review Count: ONLY show if rating > 0 AND reviewCount > 0 */}
+                  {biz.rating > 0 && biz.reviewCount > 0 ? (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                      <span className="font-bold text-slate-900">{biz.rating}</span>
+                      <span className="text-slate-400 font-medium">
+                        ({biz.reviewCountFormatted || `${biz.reviewCount} ulasan`})
+                      </span>
+                    </div>
+                  ) : null}
 
                   {/* Location */}
                   <div className="flex items-center gap-1 text-xs text-slate-500 pt-0.5">
@@ -362,7 +357,7 @@ export default function CategoryClient({
               </div>
 
               {/* Bottom Detail Link */}
-              <div className="px-5 pb-5 pt-2 border-t border-slate-100/80">
+              <div className="pt-4 mt-4 border-t border-slate-100/80">
                 <Link
                   href={`/business/${biz.slug}`}
                   className="inline-flex items-center gap-1 text-xs font-bold text-[#008767] hover:text-[#006e54] transition-colors"
@@ -376,30 +371,57 @@ export default function CategoryClient({
         </div>
       )}
 
-      {/* ── PAGINATION BAR ── */}
-      <div className="flex items-center justify-center gap-1.5 pt-6 text-xs font-semibold">
-        <button className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-400 hover:border-[#008767] flex items-center justify-center">
-          ‹
-        </button>
-        <button className="w-8 h-8 rounded-full bg-[#008767] text-white font-bold shadow-xs">
-          1
-        </button>
-        <button className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767]">
-          2
-        </button>
-        <button className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767]">
-          3
-        </button>
-        <button className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767]">
-          4
-        </button>
-        <button className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767]">
-          5
-        </button>
-        <button className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767] flex items-center justify-center">
-          ›
-        </button>
-      </div>
+      {/* ── INTERACTIVE PAGINATION BAR ── */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1.5 pt-6 text-xs font-semibold">
+          <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() => {
+              setCurrentPage((p) => Math.max(1, p - 1));
+              window.scrollTo({ top: 300, behavior: "smooth" });
+            }}
+            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767] disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Halaman Sebelumnya"
+          >
+            ‹
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+            const isActive = currentPage === pageNum;
+            return (
+              <button
+                key={pageNum}
+                type="button"
+                onClick={() => {
+                  setCurrentPage(pageNum);
+                  window.scrollTo({ top: 300, behavior: "smooth" });
+                }}
+                className={`w-8 h-8 rounded-full transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-[#008767] text-white font-bold shadow-xs"
+                    : "bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767]"
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            disabled={currentPage === totalPages}
+            onClick={() => {
+              setCurrentPage((p) => Math.min(totalPages, p + 1));
+              window.scrollTo({ top: 300, behavior: "smooth" });
+            }}
+            className="w-8 h-8 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-[#008767] hover:text-[#008767] disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:text-slate-600 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer"
+            aria-label="Halaman Berikutnya"
+          >
+            ›
+          </button>
+        </div>
+      )}
 
       {/* ── BOTTOM CALLOUT BANNER ── */}
       <div className="bg-[#e8f6f2]/80 border border-[#bce4d7] rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 mt-12">
