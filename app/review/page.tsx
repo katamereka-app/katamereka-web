@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/navbar";
 import { getBusinessBySlug, businesses, Business } from "@/lib/mock-data";
+import { fetchBusinessBySlug, API_BASE_URL } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import {
   Star,
@@ -36,6 +37,8 @@ function WriteReviewContent() {
 
   const [selectedSlug, setSelectedSlug] = useState<string>(slugParam);
   const [business, setBusiness] = useState<Business>(getBusinessBySlug(slugParam));
+  // Real business UUID from API (needed to POST review to correct endpoint)
+  const [realBusinessId, setRealBusinessId] = useState<string | null>(null);
 
   // Inline Auth states for non-logged-in users
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
@@ -64,10 +67,15 @@ function WriteReviewContent() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  // Fetch real business data from API whenever slug changes
   useEffect(() => {
     if (slugParam) {
       setSelectedSlug(slugParam);
       setBusiness(getBusinessBySlug(slugParam));
+      // Also fetch real business to get UUID
+      fetchBusinessBySlug(slugParam).then((res) => {
+        if (res?.data?.id) setRealBusinessId(res.data.id);
+      });
     }
   }, [slugParam]);
 
@@ -126,6 +134,10 @@ function WriteReviewContent() {
   const handleSelectBusiness = (newSlug: string) => {
     setSelectedSlug(newSlug);
     setBusiness(getBusinessBySlug(newSlug));
+    setRealBusinessId(null); // reset while fetching
+    fetchBusinessBySlug(newSlug).then((res) => {
+      if (res?.data?.id) setRealBusinessId(res.data.id);
+    });
     router.replace(`/review?business=${newSlug}`);
   };
 
@@ -144,7 +156,7 @@ function WriteReviewContent() {
     setPhotos(photos.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
@@ -170,11 +182,49 @@ function WriteReviewContent() {
 
     setIsSubmitting(true);
 
-    // Simulate API delay
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const token = localStorage.getItem("accessToken");
+      const targetId = realBusinessId || business.id;
+
+      if (!token) {
+        setErrorMessage("Anda harus login terlebih dahulu untuk mengirim ulasan.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!targetId) {
+        setErrorMessage("Data bisnis tidak ditemukan. Silakan refresh halaman.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/businesses/${targetId}/reviews`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          rating,
+          title: title.trim(),
+          content: content.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setErrorMessage(data?.message || "Gagal mengirim ulasan. Silakan coba lagi.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Success — navigate to success page
       router.push(`/review/success?business=${business.slug}`);
-    }, 900);
+    } catch (err) {
+      setErrorMessage("Terjadi kesalahan koneksi. Silakan periksa koneksi internet Anda.");
+      setIsSubmitting(false);
+    }
   };
 
   const getRatingLabel = (val: number) => {

@@ -7,11 +7,13 @@ import { toast } from "sonner";
 import {
   fetchBusinessBySlug,
   ApiBusinessDetail,
+  API_BASE_URL,
   fetchClaimStatus,
   createBusinessClaim,
   BusinessClaimStatus,
   VerificationMethod,
 } from "@/lib/api-client";
+import { formatRelativeDate, formatStarRating, deleteReview } from "@/lib/api-profile";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +56,9 @@ import {
   Store,
   HelpCircle,
   ExternalLink,
-  Copy
+  Copy,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { useAuth } from "@/lib/auth-context";
@@ -79,6 +83,22 @@ export default function BusinessProfilePage() {
     proof_url: string;
     message: string;
   }>({ verification_method: "DOCUMENT", proof_url: "", message: "" });
+
+  // ── Business Reviews State ──────────────────────────────────────────────────
+  interface BusinessReview {
+    id: string;
+    rating: number;
+    title: string;
+    content: string;
+    status: string;
+    createdAt: string;
+    user?: { id?: string; name?: string; initials?: string };
+    helpfulCount?: number;
+  }
+  const [businessReviews, setBusinessReviews] = useState<BusinessReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadApiBusinessDetail() {
@@ -121,6 +141,52 @@ export default function BusinessProfilePage() {
     loadClaimStatus();
   }, [isLoggedIn, apiDetail?.id]);
 
+  // ── Fetch Reviews ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!apiDetail?.id) return;
+    setLoadingReviews(true);
+    fetch(`${API_BASE_URL}/businesses/${apiDetail.id}/reviews`, {
+      cache: "no-store",
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.data && Array.isArray(data.data)) {
+          setBusinessReviews(data.data);
+        } else if (data?.reviews && Array.isArray(data.reviews)) {
+          setBusinessReviews(data.reviews);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingReviews(false));
+  }, [apiDetail?.id]);
+
+  async function handleDeleteReview(reviewId: string) {
+    setDeletingReviewId(reviewId);
+    const res = await deleteReview(reviewId);
+    if (res?.success) {
+      const remaining = businessReviews.filter((r) => r.id !== reviewId);
+      setBusinessReviews(remaining);
+      // recalculate count & average rating dynamically (optimistic update)
+      if (apiDetail) {
+        const newCount = remaining.length;
+        const sum = remaining.reduce((acc, r) => {
+          const rat = typeof r.rating === "number" ? r.rating : parseFloat(String(r.rating ?? 0));
+          return acc + (isNaN(rat) ? 0 : rat);
+        }, 0);
+        const newAvg = newCount > 0 ? parseFloat((sum / newCount).toFixed(1)) : 0;
+        setApiDetail({
+          ...apiDetail,
+          reviewCount: newCount,
+          reviews_count: newCount,
+          averageRating: newAvg,
+          rating: newAvg,
+        });
+      }
+    }
+    setDeletingReviewId(null);
+    setConfirmDeleteId(null);
+  }
+
   async function handleSubmitClaim() {
     if (!apiDetail?.id) return;
     setClaimSubmitting(true);
@@ -153,15 +219,6 @@ export default function BusinessProfilePage() {
         .toUpperCase()
     : "KM";
 
-  // Priority: averageRating (real Katamereka reviews) > rating (legacy)
-  // NOTE: externalRating is Geoapify external metadata — never shown to users
-  let ratingVal = (() => {
-    const r = apiDetail?.averageRating ?? apiDetail?.rating ?? null;
-    if (r === null || r === undefined) return 0;
-    const parsed = typeof r === "number" ? r : parseFloat(String(r));
-    return isNaN(parsed) ? 0 : parsed;
-  })();
-
   // Priority: reviewCount (real API) > reviews_count (legacy) > externalReviewsCount
   let reviewCountVal =
     apiDetail?.reviewCount ?? apiDetail?.reviews_count ?? apiDetail?.externalReviewsCount ?? 0;
@@ -169,11 +226,20 @@ export default function BusinessProfilePage() {
 
   // Sanitize Geoapify external defaults (reviews_count of 12 = no real reviews)
   if (reviewCountVal === 12) {
-    ratingVal = 0;
     reviewCountVal = 0;
   }
 
-  const ratingFormatted = ratingVal > 0 ? ratingVal.toFixed(1) : "0";
+  // Priority: averageRating (real Katamereka reviews) > rating (legacy)
+  // If reviewCountVal is 0, average rating is ALWAYS 0!
+  let ratingVal = (() => {
+    if (reviewCountVal === 0) return 0;
+    const r = apiDetail?.averageRating ?? apiDetail?.rating ?? null;
+    if (r === null || r === undefined) return 0;
+    const parsed = typeof r === "number" ? r : parseFloat(String(r));
+    return isNaN(parsed) ? 0 : parsed;
+  })();
+
+  const ratingFormatted = (reviewCountVal > 0 && ratingVal > 0) ? ratingVal.toFixed(1) : "0.0";
   const reviewCountFormatted = `${reviewCountVal} ulasan`;
 
   let formattedCategory = apiDetail?.category || "-";
@@ -437,15 +503,105 @@ export default function BusinessProfilePage() {
                         {reviewCountFormatted}
                       </p>
                     </div>
+                    {businessReviews.length > 0 && (
+                      <button
+                        onClick={() => setActiveTab("review")}
+                        className="text-xs font-semibold text-[#008767] hover:underline"
+                      >
+                        Lihat semua →
+                      </button>
+                    )}
                   </div>
 
-                  <div className="py-8 text-center space-y-3">
+                  {loadingReviews ? (
+                    <div className="space-y-3 animate-pulse">
+                      {[1, 2].map((i) => <div key={i} className="h-20 bg-slate-100 rounded-2xl" />)}
+                    </div>
+                  ) : businessReviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {businessReviews.slice(0, 3).map((rev) => (
+                        <ReviewCard
+                          key={rev.id}
+                          review={rev}
+                          currentUserId={user?.id}
+                          onDelete={(id) => setConfirmDeleteId(id)}
+                          isDeleting={deletingReviewId === rev.id}
+                        />
+                      ))}
+                      {businessReviews.length > 3 && (
+                        <button
+                          onClick={() => setActiveTab("review")}
+                          className="w-full py-3 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-600 hover:border-[#008767] hover:text-[#008767] transition-colors"
+                        >
+                          Lihat {businessReviews.length - 3} ulasan lainnya →
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="py-8 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                        <MessageSquare className="w-6 h-6 text-slate-400" />
+                      </div>
+                      <h4 className="font-bold text-[#1e293b] text-sm">Belum ada ulasan dari pengguna</h4>
+                      <p className="text-xs text-slate-500 max-w-xs mx-auto">
+                        Jadilah yang pertama memberikan ulasan untuk {apiDetail?.name || "bisnis ini"}.
+                      </p>
+                      <Link
+                        href={`/review?business=${slug}`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#008767] text-white text-xs font-semibold shadow-xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Tulis Ulasan Sekarang</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* TAB REVIEW */}
+            {activeTab === "review" && (
+              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
+                      Semua Ulasan Pelanggan
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">{reviewCountFormatted}</p>
+                  </div>
+                  <Link
+                    href={`/review?business=${slug}`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#008767] text-white text-xs font-semibold"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Tulis Ulasan</span>
+                  </Link>
+                </div>
+
+                {loadingReviews ? (
+                  <div className="space-y-3 animate-pulse">
+                    {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-slate-100 rounded-2xl" />)}
+                  </div>
+                ) : businessReviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {businessReviews.map((rev) => (
+                      <ReviewCard
+                        key={rev.id}
+                        review={rev}
+                        currentUserId={user?.id}
+                        onDelete={(id) => setConfirmDeleteId(id)}
+                        isDeleting={deletingReviewId === rev.id}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-12 text-center space-y-3">
                     <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
                       <MessageSquare className="w-6 h-6 text-slate-400" />
                     </div>
-                    <h4 className="font-bold text-slate-800 text-sm">Belum ada ulasan dari pengguna</h4>
+                    <h4 className="font-bold text-slate-800 text-sm">Belum ada ulasan terdaftar</h4>
                     <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                      Jadilah yang pertama memberikan ulasan untuk {apiDetail?.name || "bisnis ini"}.
+                      Berikan pendapat dan pengalaman Anda untuk membantu calon pengunjung lainnya.
                     </p>
                     <Link
                       href={`/review?business=${slug}`}
@@ -455,31 +611,7 @@ export default function BusinessProfilePage() {
                       <span>Tulis Ulasan Sekarang</span>
                     </Link>
                   </div>
-                </div>
-              </>
-            )}
-
-            {/* TAB REVIEW */}
-            {activeTab === "review" && (
-              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
-                <div className="border-b border-slate-100 pb-4">
-                  <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
-                    Semua Ulasan Pelanggan
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {reviewCountFormatted}
-                  </p>
-                </div>
-
-                <div className="py-12 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                    <MessageSquare className="w-6 h-6 text-slate-400" />
-                  </div>
-                  <h4 className="font-bold text-slate-800 text-sm">Belum ada ulasan terdaftar</h4>
-                  <p className="text-xs text-slate-500 max-w-xs mx-auto">
-                    Berikan pendapat dan pengalaman Anda untuk membantu calon pengunjung lainnya.
-                  </p>
-                </div>
+                )}
               </div>
             )}
 
@@ -826,6 +958,194 @@ export default function BusinessProfilePage() {
           </div>
         </div>
       </footer>
+
+      {/* Delete Confirmation Modal Dialog */}
+      <DeleteConfirmModal
+        isOpen={Boolean(confirmDeleteId)}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={() => confirmDeleteId && handleDeleteReview(confirmDeleteId)}
+        isDeleting={Boolean(deletingReviewId)}
+      />
+    </div>
+  );
+}
+
+// ─── ReviewCard component ─────────────────────────────────────────────────────
+interface ReviewCardProps {
+  review: {
+    id: string;
+    rating: number;
+    title: string;
+    content: string;
+    status?: string;
+    createdAt: string;
+    user?: { id?: string; name?: string; initials?: string };
+    userId?: string;
+    helpfulCount?: number;
+  };
+  currentUserId?: string;
+  onDelete?: (id: string) => void;
+  isDeleting?: boolean;
+}
+
+function ReviewCard({ review, currentUserId, onDelete, isDeleting }: ReviewCardProps) {
+  const rating = typeof review.rating === "number" ? review.rating : parseFloat(String(review.rating ?? 0));
+  const safeRating = isNaN(rating) ? 0 : Math.min(5, Math.max(0, rating));
+  const initials = review.user?.initials || review.user?.name?.split(" ").map((w: string) => w[0]).join("").substring(0, 2).toUpperCase() || "U";
+  const displayName = review.user?.name || "Pengguna";
+  const isOwnReview = Boolean(currentUserId && (review.user?.id === currentUserId || review.userId === currentUserId));
+
+  function relativeDate(dateStr: string) {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffSec = Math.floor(diffMs / 1000);
+      const diffMin = Math.floor(diffSec / 60);
+      const diffHour = Math.floor(diffMin / 60);
+      const diffDay = Math.floor(diffHour / 24);
+      if (diffSec < 60) return "Baru saja";
+      if (diffMin < 60) return `${diffMin} menit lalu`;
+      if (diffHour < 24) return `${diffHour} jam lalu`;
+      if (diffDay < 7) return `${diffDay} hari lalu`;
+      return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+    } catch { return dateStr; }
+  }
+
+  return (
+    <div className="bg-slate-50/60 rounded-2xl border border-slate-200/80 p-4 sm:p-5 space-y-3 hover:border-[#008767]/30 transition-colors">
+      {/* Header row */}
+      <div className="flex items-start gap-3">
+        {/* User avatar */}
+        <div className="w-10 h-10 rounded-full bg-[#008767] text-white flex-shrink-0 flex items-center justify-center font-bold text-sm">
+          {initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-900 text-sm">{displayName}</p>
+          <p className="text-[11px] text-slate-400">{relativeDate(review.createdAt)}</p>
+        </div>
+        {/* Rating */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star
+              key={i}
+              className={`w-3.5 h-3.5 ${i < safeRating ? "text-amber-400 fill-amber-400" : "text-slate-200 fill-slate-200"}`}
+            />
+          ))}
+          <span className="text-xs font-bold text-slate-700 ml-1">{safeRating.toFixed(1)}</span>
+        </div>
+      </div>
+
+      {/* Review body */}
+      {review.title && (
+        <p className="font-semibold text-slate-800 text-sm">"{review.title}"</p>
+      )}
+      {review.content && (
+        <p className="text-sm text-slate-600 leading-relaxed">{review.content}</p>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+        <div className="flex items-center gap-3">
+          {review.helpfulCount !== undefined && review.helpfulCount > 0 && (
+            <span className="flex items-center gap-1 text-[11px] text-slate-500">
+              <ThumbsUp className="w-3 h-3 text-[#008767]" />
+              {review.helpfulCount} orang merasa terbantu
+            </span>
+          )}
+          {review.status === "APPROVED" ? (
+            <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+              Terverifikasi
+            </span>
+          ) : review.status === "PENDING" ? (
+            <span className="text-[10px] text-amber-600 font-semibold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+              Menunggu Review
+            </span>
+          ) : null}
+        </div>
+
+        {isOwnReview && onDelete && (
+          <button
+            onClick={() => onDelete(review.id)}
+            disabled={isDeleting}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors text-xs font-medium"
+            title="Hapus Ulasan Saya"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Hapus</span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Delete Confirmation Modal Dialog ─────────────────────────────────────────
+interface DeleteConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+  title?: string;
+  description?: string;
+}
+
+function DeleteConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  isDeleting,
+  title = "Hapus Ulasan Ini?",
+  description = "Apakah Anda yakin ingin menghapus ulasan ini? Tindakan ini tidak dapat dibatalkan dan ulasan akan dihapus secara permanen.",
+}: DeleteConfirmModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div
+        className="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-7 shadow-2xl border border-slate-100 text-center space-y-5 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Warning Icon Badge */}
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-xs">
+          <Trash2 className="w-8 h-8" />
+        </div>
+
+        {/* Text */}
+        <div className="space-y-1.5">
+          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+          <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+            {description}
+          </p>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex items-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isDeleting}
+            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition-colors shadow-md shadow-rose-600/20 flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            {isDeleting ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Menghapus...</span>
+              </>
+            ) : (
+              <span>Ya, Hapus</span>
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
