@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { MessageSquare, Mail, Lock, Eye, EyeOff, ArrowRight, CheckCircle2, X, KeyRound } from "lucide-react";
+import { MessageSquare, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle2, X, KeyRound, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function LoginFormContent() {
@@ -12,6 +12,7 @@ function LoginFormContent() {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get("redirect");
   const roleParam = searchParams.get("role");
+  const isBisnis = roleParam === "bisnis";
 
   const { login, changePassword } = useAuth();
 
@@ -53,12 +54,8 @@ function LoginFormContent() {
       setIsLoading(false);
       setSuccess(true);
 
-      // Determine target redirect path based on user role / business context
-      const userRole = res.user?.role || roleParam;
-      const isBusinessContext =
-        userRole === "bisnis" ||
-        roleParam === "bisnis" ||
-        (typeof window !== "undefined" && window.location.hostname.startsWith("business."));
+      // Target decided from the server-verified session, not a guessable param.
+      const isBusinessContext = !!res.user?.businessRole;
 
       let targetPath = redirectParam;
       if (!targetPath) {
@@ -106,21 +103,55 @@ function LoginFormContent() {
     }
   };
 
+  const accent = isBisnis ? "#1d4ed8" : "#008767";
+  // Full literal class strings (not interpolated) so Tailwind's scanner emits both.
+  const focusRingClasses = isBisnis
+    ? "focus:border-blue-600 focus:ring-blue-600/20"
+    : "focus:border-[#008767] focus:ring-[#008767]/20";
+  const checkboxAccentClass = isBisnis ? "accent-blue-700" : "accent-[#008767]";
+  const primaryButtonClasses = isBisnis
+    ? "bg-blue-700 hover:bg-blue-800 shadow-blue-700/20"
+    : "bg-[#008767] hover:bg-[#007458] shadow-[#008767]/20";
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e8f6f2] via-slate-50 to-[#f4faf7] flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
+    <div
+      className={`min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans ${
+        isBisnis
+          ? "bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50"
+          : "bg-gradient-to-br from-[#e8f6f2] via-slate-50 to-[#f4faf7]"
+      }`}
+    >
+      {/* Back — leave the login page entirely, not a form step */}
+      <button
+        type="button"
+        onClick={() => router.back()}
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 inline-flex items-center gap-1.5 rounded-full bg-white/80 backdrop-blur px-3.5 py-2 text-xs font-bold text-slate-600 shadow-sm border border-slate-200/80 hover:text-slate-900 hover:bg-white transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" />
+        <span>Kembali</span>
+      </button>
+
       {/* Background Decor Circles */}
-      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#008767]/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-[#008767]/15 blur-3xl pointer-events-none" />
+      <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${accent}1a` }} />
+      <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none" style={{ backgroundColor: `${accent}26` }} />
 
       <div className="w-full max-w-md relative z-10 space-y-6">
         {/* Top Brand Link */}
         <div className="text-center">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
-            <div className="w-11 h-11 rounded-full overflow-hidden shadow-lg shadow-[#008767]/25 group-hover:scale-105 transition-transform flex-shrink-0 bg-[#008767]">
-              <img src="/logo.png" alt="Katamereka Logo" className="w-full h-full object-cover" />
+            <div
+              className="w-11 h-11 rounded-full overflow-hidden shadow-lg group-hover:scale-105 transition-transform flex-shrink-0 flex items-center justify-center"
+              style={{ backgroundColor: accent, boxShadow: `0 10px 25px -5px ${accent}40` }}
+            >
+              {isBisnis ? (
+                <Building2 className="w-5 h-5 text-white" />
+              ) : (
+                <img src="/logo.png" alt="Katamereka Logo" className="w-full h-full object-cover" />
+              )}
             </div>
             <span className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Kata<span className="text-[#008767]">mereka</span>
+              Kata<span style={{ color: accent }}>mereka</span>
+              {isBisnis && <span className="ml-1.5 align-middle text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100 rounded-full px-2 py-1">Business</span>}
             </span>
           </Link>
         </div>
@@ -128,9 +159,13 @@ function LoginFormContent() {
         {/* Card Container */}
         <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/80 p-8 sm:p-10 shadow-xl shadow-slate-200/50 space-y-6">
           <div className="space-y-2 text-center">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Masuk ke Akun</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              {isBisnis ? "Masuk ke Akun Bisnis" : "Masuk ke Akun"}
+            </h1>
             <p className="text-xs sm:text-sm text-slate-500">
-              Masukkan email dan kata sandi Anda untuk melanjutkan.
+              {isBisnis
+                ? "Kelola profil bisnis dan ulasan pelanggan Anda."
+                : "Masukkan email dan kata sandi Anda untuk melanjutkan."}
             </p>
           </div>
 
@@ -173,7 +208,7 @@ function LoginFormContent() {
                   placeholder="contoh@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-50/80 border border-slate-200 focus:border-[#008767] focus:bg-white focus:ring-2 focus:ring-[#008767]/20 rounded-xl pl-10 pr-4 py-3 text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  className={`w-full bg-slate-50/80 border border-slate-200 focus:bg-white focus:ring-2 rounded-xl pl-10 pr-4 py-3 text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400 ${focusRingClasses}`}
                 />
               </div>
             </div>
@@ -192,7 +227,7 @@ function LoginFormContent() {
                   placeholder="Minimal 6 karakter"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-50/80 border border-slate-200 focus:border-[#008767] focus:bg-white focus:ring-2 focus:ring-[#008767]/20 rounded-xl pl-10 pr-11 py-3 text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400"
+                  className={`w-full bg-slate-50/80 border border-slate-200 focus:bg-white focus:ring-2 rounded-xl pl-10 pr-11 py-3 text-slate-800 text-sm outline-none transition-all placeholder:text-slate-400 ${focusRingClasses}`}
                 />
                 <button
                   type="button"
@@ -209,7 +244,7 @@ function LoginFormContent() {
               <input
                 type="checkbox"
                 id="remember"
-                className="accent-[#008767] w-4 h-4 rounded cursor-pointer"
+                className={`${checkboxAccentClass} w-4 h-4 rounded cursor-pointer`}
               />
               <label htmlFor="remember" className="text-xs text-slate-600 cursor-pointer font-medium">
                 Ingat saya di perangkat ini
@@ -220,7 +255,7 @@ function LoginFormContent() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 rounded-xl bg-[#008767] hover:bg-[#007458] text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-md shadow-[#008767]/20 active:scale-95 disabled:opacity-70 mt-2"
+              className={`w-full py-3.5 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 disabled:opacity-70 mt-2 ${primaryButtonClasses}`}
             >
               {isLoading ? (
                 <span>Memproses...</span>

@@ -42,6 +42,41 @@ interface HomeContentProps {
   initialCityFacets: ApiCityFacet[];
 }
 
+function getCategoryIconAndColor(categoryRaw: string, index: number) {
+  const lower = (categoryRaw || "").toLowerCase();
+  if (lower.includes("hotel") || lower.includes("motel") || lower.includes("accommodation")) {
+    return { icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" };
+  }
+  if (lower.includes("restaurant") || lower.includes("catering") || lower.includes("makan") || lower.includes("kuliner")) {
+    return { icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" };
+  }
+  if (lower.includes("cafe") || lower.includes("coffee") || lower.includes("ngopi")) {
+    return { icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" };
+  }
+  if (lower.includes("car") || lower.includes("jasa") || lower.includes("service") || lower.includes("repair") || lower.includes("rental")) {
+    return { icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" };
+  }
+  if (lower.includes("shop") || lower.includes("store") || lower.includes("belanja") || lower.includes("supermarket") || lower.includes("mall")) {
+    return { icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" };
+  }
+  if (lower.includes("beauty") || lower.includes("kecantikan") || lower.includes("spa") || lower.includes("perawatan") || lower.includes("health")) {
+    return { icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" };
+  }
+  if (lower.includes("apartment") || lower.includes("building") || lower.includes("property") || lower.includes("residential")) {
+    return { icon: Building2, bgColor: "bg-indigo-100/80 text-indigo-600" };
+  }
+
+  const presets = [
+    { icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
+    { icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
+    { icon: Bed, bgColor: "bg-purple-100/80 text-purple-600" },
+    { icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" },
+    { icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
+    { icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
+  ];
+  return presets[index % presets.length];
+}
+
 export default function LandingPage({ initialCategoryFacets, initialCityFacets }: HomeContentProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -132,7 +167,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       <Navbar />
 
       {/* ================= HERO SECTION ================= */}
-      <section className="relative pt-12 pb-20 md:pt-16 md:pb-28 overflow-hidden bg-gradient-to-b from-white via-[#f4faf7]/50 to-slate-50/50">
+      <section className="relative pt-10 pb-12 sm:pt-14 sm:pb-16 lg:pt-16 lg:pb-20 overflow-hidden bg-gradient-to-b from-white via-[#f4faf7]/50 to-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
@@ -194,7 +229,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 1: BISNIS POPULER ================= */}
-      <section className="py-16 bg-white">
+      <section className="py-10 sm:py-12 lg:py-14 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -257,16 +292,13 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 2: CARI SESUAI KEBUTUHAN ================= */}
-      <section className="pt-12 pb-8 sm:pt-14 sm:pb-10 lg:pt-16 lg:pb-12 bg-[#f4faf7]/60 border-t border-slate-100">
+      <section className="py-10 sm:py-12 lg:py-14 bg-[#f4faf7]/60 border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
             {/* Left Column: Heading, Description & Centered Large Illustration */}
             <div className="lg:col-span-5 space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
               <div className="w-full">
-                <span className="inline-block text-xs font-bold text-[#008767] bg-[#e8f6f2] px-3.5 py-1.5 rounded-full border border-[#c4ebde] mb-3">
-                  Cari Sesuai Kebutuhan
-                </span>
                 <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.2]">
                   Apa yang sedang<br className="hidden sm:block" /> kamu cari?
                 </h2>
@@ -275,58 +307,42 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 Temukan bisnis berdasarkan kebutuhanmu, bukan hanya berdasarkan nama atau kategori.
               </p>
 
-              {/* Newly attached Illustration image shifted further to the left */}
-              <div className="pt-6 sm:pt-8 w-full flex justify-center lg:justify-start items-center -ml-6 sm:-ml-12 lg:-ml-18">
+              {/* Newly attached Illustration image aligned proportionally to the left */}
+              <div className="pt-4 sm:pt-6 w-full flex justify-center lg:justify-start items-center -ml-2 sm:-ml-4 lg:-ml-6">
                 <img
                   src="/ilus-search.png"
                   alt="Cari Sesuai Kebutuhan"
-                  className="w-full max-w-md sm:max-w-lg lg:max-w-xl h-auto object-contain scale-110 sm:scale-115 transform transition-transform"
+                  className="w-full max-w-xs sm:max-w-sm lg:max-w-md h-auto object-contain transform transition-transform"
                 />
               </div>
             </div>
 
-            {/* Right Column: 2x3 Category Cards Grid */}
+            {/* Right Column: Dynamic 2x3 Category Cards Grid (Top 6 categories by count) */}
             <div className="lg:col-span-7 space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-5">
-                {[
-                  {
-                    title: "Tempat Makan",
-                    href: "/kategori/restoran",
-                    icon: Utensils,
-                    bgColor: "bg-emerald-100/80 text-[#008767]",
-                  },
-                  {
-                    title: "Tempat Ngopi",
-                    href: "/kategori/restoran",
-                    icon: Coffee,
-                    bgColor: "bg-amber-100/80 text-amber-600",
-                  },
-                  {
-                    title: "Menginap",
-                    href: "/kategori/hotel",
-                    icon: Bed,
-                    bgColor: "bg-purple-100/80 text-purple-600",
-                  },
-                  {
-                    title: "Cari Jasa",
-                    href: "/businesses",
-                    icon: Wrench,
-                    bgColor: "bg-sky-100/80 text-sky-600",
-                  },
-                  {
-                    title: "Belanja",
-                    href: "/businesses",
-                    icon: ShoppingBag,
-                    bgColor: "bg-pink-100/80 text-pink-600",
-                  },
-                  {
-                    title: "Perawatan",
-                    href: "/kategori/kecantikan",
-                    icon: Flower2,
-                    bgColor: "bg-teal-100/80 text-teal-600",
-                  },
-                ].map((item, idx) => {
-                  const IconComponent = item.icon;
+                {(() => {
+                  const top6Facets = (categoryFacets || [])
+                    .filter((catItem) => isRealBusinessCategory(catItem.category))
+                    .sort((a, b) => (b.count || 0) - (a.count || 0))
+                    .slice(0, 6);
+
+                  const dynamicDisplayCards = top6Facets.length > 0
+                    ? top6Facets.map((cat, idx) => ({
+                        title: categoryDisplayName(cat.category),
+                        href: `/kategori/${slugify(cat.category)}`,
+                        ...getCategoryIconAndColor(cat.category, idx)
+                      }))
+                    : [
+                        { title: "Hotel", href: "/kategori/accommodation.hotel", icon: Hotel, bgColor: "bg-purple-100/80 text-purple-600" },
+                        { title: "Restoran", href: "/kategori/catering.restaurant", icon: Utensils, bgColor: "bg-emerald-100/80 text-[#008767]" },
+                        { title: "Kafe & Ngopi", href: "/kategori/catering.cafe", icon: Coffee, bgColor: "bg-amber-100/80 text-amber-600" },
+                        { title: "Supermarket", href: "/kategori/shop.supermarket", icon: ShoppingBag, bgColor: "bg-pink-100/80 text-pink-600" },
+                        { title: "Cari Jasa", href: "/businesses", icon: Wrench, bgColor: "bg-sky-100/80 text-sky-600" },
+                        { title: "Perawatan", href: "/kategori/kecantikan", icon: Flower2, bgColor: "bg-teal-100/80 text-teal-600" },
+                      ];
+
+                  return dynamicDisplayCards.map((item, idx) => {
+                    const IconComponent = item.icon;
                   return (
                     <Link
                       key={idx}
@@ -347,7 +363,8 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                       </div>
                     </Link>
                   );
-                })}
+                });
+              })()}
               </div>
 
               {/* Bottom Right Link */}
@@ -367,7 +384,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 3: KATEGORI ================= */}
-      <section className="py-16 bg-white">
+      <section className="py-10 sm:py-12 lg:py-14 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -475,7 +492,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
         </div>
       </section>
       {/* ================= SECTION 5: FAQ ================= */}
-      <section className="py-16 bg-gradient-to-b from-[#f4faf7] to-white border-t border-[#d3f0e5]">
+      <section className="py-10 sm:py-12 lg:py-14 bg-gradient-to-b from-[#f4faf7] to-white border-t border-[#d3f0e5]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           {/* Header */}
           <div className="text-center space-y-3">
@@ -533,7 +550,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 4: CTA BANNER ================= */}
-      <section className="py-12 bg-white">
+      <section className="py-8 sm:py-10 bg-white border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-r from-[#e1f3ed] via-[#ebf7f3] to-[#f4faf7] rounded-3xl p-8 sm:p-10 border border-[#bce4d7] shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-5">
@@ -561,7 +578,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
 
 
       {/* ================= FOOTER ================= */}
-      <footer className="bg-white border-t border-slate-200/80 pt-16 pb-12 text-slate-600 text-sm">
+      <footer className="bg-white border-t border-slate-200/80 pt-12 pb-8 text-slate-600 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           {/* Top Footer Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12">
