@@ -257,13 +257,13 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 2: CARI SESUAI KEBUTUHAN ================= */}
-      <section className="py-16 md:py-20 bg-[#f4faf7]/60 border-t border-slate-100">
+      <section className="pt-16 pb-24 md:pt-20 md:pb-32 lg:pb-36 bg-[#f4faf7]/60 border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
-            {/* Left Column: Heading, Description & New Illustration Asset */}
-            <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
-              <div>
+            {/* Left Column: Heading, Description & Centered Large Illustration */}
+            <div className="lg:col-span-5 space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
+              <div className="w-full">
                 <span className="inline-block text-xs font-bold text-[#008767] bg-[#e8f6f2] px-3.5 py-1.5 rounded-full border border-[#c4ebde] mb-3">
                   Cari Sesuai Kebutuhan
                 </span>
@@ -271,16 +271,16 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                   Apa yang sedang<br className="hidden sm:block" /> kamu cari?
                 </h2>
               </div>
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-md mx-auto lg:mx-0">
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-md">
                 Temukan bisnis berdasarkan kebutuhanmu, bukan hanya berdasarkan nama atau kategori.
               </p>
 
-              {/* Newly attached Illustration image placed on the left side under description */}
-              <div className="pt-4 sm:pt-6 flex justify-center lg:justify-start">
+              {/* Newly attached Illustration image centered directly under text block */}
+              <div className="pt-6 sm:pt-8 w-full flex justify-center items-center">
                 <img
                   src="/ilus-search.png"
                   alt="Cari Sesuai Kebutuhan"
-                  className="w-full max-w-xs sm:max-w-sm h-auto object-contain"
+                  className="w-full max-w-md sm:max-w-lg lg:max-w-xl h-auto object-contain scale-110 sm:scale-115 transform transition-transform"
                 />
               </div>
             </div>
