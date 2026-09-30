@@ -257,7 +257,7 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       </section>
 
       {/* ================= SECTION 2: CARI SESUAI KEBUTUHAN ================= */}
-      <section className="pt-16 pb-24 md:pt-20 md:pb-32 lg:pb-36 bg-[#f4faf7]/60 border-t border-slate-100">
+      <section className="pt-12 pb-8 sm:pt-14 sm:pb-10 lg:pt-16 lg:pb-12 bg-[#f4faf7]/60 border-t border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
@@ -275,8 +275,8 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
                 Temukan bisnis berdasarkan kebutuhanmu, bukan hanya berdasarkan nama atau kategori.
               </p>
 
-              {/* Newly attached Illustration image shifted slightly to the left */}
-              <div className="pt-6 sm:pt-8 w-full flex justify-center lg:justify-start items-center -ml-3 sm:-ml-6 lg:-ml-10">
+              {/* Newly attached Illustration image shifted further to the left */}
+              <div className="pt-6 sm:pt-8 w-full flex justify-center lg:justify-start items-center -ml-6 sm:-ml-12 lg:-ml-18">
                 <img
                   src="/ilus-search.png"
                   alt="Cari Sesuai Kebutuhan"
