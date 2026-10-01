@@ -65,7 +65,8 @@ type SharePlatform = {
   label: string;
   bg: string;
   icon: () => React.ReactElement;
-  buildHref?: (url: string, text: string) => string;
+  buildHref: (url: string, text: string) => string;
+  copyBeforeOpen?: boolean;
 };
 
 const SHARE_PLATFORMS: SharePlatform[] = [
@@ -81,6 +82,10 @@ const SHARE_PLATFORMS: SharePlatform[] = [
     label: "Instagram",
     bg: "bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]",
     icon: InstagramIcon,
+    // Instagram has no public web share-intent for links, so we open the app/site
+    // directly and copy the link for the user to paste.
+    buildHref: () => "https://www.instagram.com/",
+    copyBeforeOpen: true,
   },
   {
     id: "linkedin",
@@ -101,6 +106,9 @@ const SHARE_PLATFORMS: SharePlatform[] = [
     label: "TikTok",
     bg: "bg-black",
     icon: TikTokIcon,
+    // TikTok has no public web share-intent for links either.
+    buildHref: () => "https://www.tiktok.com/upload",
+    copyBeforeOpen: true,
   },
 ];
 
@@ -126,12 +134,11 @@ export default function ShareBusinessModal({
 
   const handlePlatformClick = (platform: SharePlatform) => {
     const text = `Lihat ${businessName} di Katamereka`;
-    if (platform.buildHref) {
-      window.open(platform.buildHref(shareUrl, text), "_blank", "noopener,noreferrer");
-      return;
+    if (platform.copyBeforeOpen) {
+      handleCopy();
+      toast.info(`Link disalin, tempel di ${platform.label} untuk membagikan`);
     }
-    handleCopy();
-    toast.info(`Tempel link di ${platform.label} untuk membagikan`);
+    window.open(platform.buildHref(shareUrl, text), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -184,10 +191,10 @@ export default function ShareBusinessModal({
             <button
               type="button"
               onClick={handleCopy}
-              className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-colors active:scale-95 ${
+              className={`shrink-0 inline-flex items-center justify-center gap-1.5 min-w-[108px] px-3.5 py-2.5 rounded-xl border font-semibold text-xs sm:text-sm whitespace-nowrap transition-colors active:scale-95 ${
                 copied
-                  ? "bg-emerald-50 text-[#008767] border border-[#008767]/30"
-                  : "bg-[#008767] hover:bg-[#007458] text-white"
+                  ? "bg-emerald-50 text-[#008767] border-[#008767]/30"
+                  : "bg-[#008767] hover:bg-[#007458] text-white border-transparent"
               }`}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
