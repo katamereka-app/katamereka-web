@@ -177,7 +177,7 @@ export default function ShareBusinessModal({
           })}
         </div>
 
-        <div className="pt-4 border-t border-slate-100 space-y-2">
+        <div className="min-w-0 pt-4 border-t border-slate-100 space-y-2">
           <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
             <Link2 className="w-3.5 h-3.5 text-[#008767]" />
             Salin tautan
