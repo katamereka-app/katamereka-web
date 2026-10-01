@@ -198,6 +198,90 @@ export interface ApiAuthResponse {
   statusCode?: number;
 }
 
+export interface ApiBusinessPlaceResult {
+  id: string;
+  name: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  categories?: string[];
+  imageUrl?: string;
+  imageSource?: string;
+  dataSource?: string;
+}
+
+export interface ApiBusinessPlacesSearchResponse {
+  success: boolean;
+  message?: string;
+  total?: number;
+  data: ApiBusinessPlaceResult[];
+}
+
+/**
+ * 🏨 Fetch Business Place Real Image (AWS S3 / Google Maps)
+ * GET /business-places/search
+ */
+export async function fetchBusinessPlaceImage(
+  keyword: string,
+  location: string = "Indonesia",
+  lat?: number | null,
+  lon?: number | null,
+  limit: number = 10
+): Promise<string | null> {
+  if (!keyword || !keyword.trim()) return null;
+  try {
+    const query = new URLSearchParams({
+      keyword: keyword.trim(),
+      location: location.trim() || "Indonesia",
+      limit: limit.toString(),
+    });
+
+    const res = await fetch(`${API_BASE_URL}/business-places/search?${query.toString()}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (res.ok) {
+      const json: ApiBusinessPlacesSearchResponse = await res.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        const kwClean = keyword.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+        const kwWords = kwClean.split(/\s+/).filter((w) => w.length > 2);
+
+        // 1. Cek item yang nama tempatnya cocok dengan bisnis (substring / exact)
+        const exactMatch = json.data.find((item) => {
+          if (!item.imageUrl || !item.name) return false;
+          const nameClean = item.name.toLowerCase().replace(/[^a-z0-9\s]/g, " ").trim();
+          return nameClean.includes(kwClean) || kwClean.includes(nameClean);
+        });
+        if (exactMatch?.imageUrl) return exactMatch.imageUrl;
+
+        // 2. Cek item yang memuat minimal 2 kata penting dari nama bisnis
+        if (kwWords.length >= 2) {
+          const wordMatch = json.data.find((item) => {
+            if (!item.imageUrl || !item.name) return false;
+            const nameClean = item.name.toLowerCase();
+            const matchCount = kwWords.filter((w) => nameClean.includes(w)).length;
+            return matchCount >= Math.min(2, kwWords.length);
+          });
+          if (wordMatch?.imageUrl) return wordMatch.imageUrl;
+        }
+      }
+    }
+
+    // 3. Fallback akurat: Jika nama di search tidak ada yang cocok, gunakan koordinat asli bisnis
+    if (lat && lon && typeof lat === "number" && typeof lon === "number" && !isNaN(lat) && !isNaN(lon)) {
+      return `https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=600&height=400&center=lonlat:${lon},${lat}&zoom=16&marker=lonlat:${lon},${lat};color:%23008767;size:medium&apiKey=5fa6fcf045a84757aada8731401c09e7`;
+    }
+
+    return null;
+  } catch (err) {
+    console.error("fetchBusinessPlaceImage error:", err);
+    return null;
+  }
+}
+
 /**
  * 1. GET /businesses (Catalog & Search)
  */
@@ -414,7 +498,8 @@ export async function fetchCityFacets(): Promise<ApiCityFacet[]> {
 export async function fetchBusinessBySlug(
   slug: string
 ): Promise<ApiGetBusinessDetailResponse | null> {
-  const url = `${API_BASE_URL}/businesses/slug/${encodeURIComponent(slug)}`;
+  const cleanSlug = (slug || "").trim();
+  const url = `${API_BASE_URL}/businesses/slug/${encodeURIComponent(cleanSlug)}`;
 
   try {
     const res = await fetch(url, {
@@ -427,10 +512,9 @@ export async function fetchBusinessBySlug(
 
     if (res.ok) {
       const data = await res.json();
-      if (data?.data?.slug === slug) return data;
-      console.warn(
-        `fetchBusinessBySlug: API returned a business whose slug ("${data?.data?.slug}") doesn't match the requested slug ("${slug}"); treating as not found instead of rendering mismatched data.`
-      );
+      if (data?.data) {
+        return data;
+      }
     }
   } catch (e) {
     console.warn("fetchBusinessBySlug API call failed:", e);
@@ -957,6 +1041,10 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem | ApiBusinessD
   const regionParts = [effectiveCity, effectiveState, effectivePostcode].filter(Boolean);
   const computedFullAddress = addrParts.length > 0 ? addrParts.join(", ") : (regionParts.length > 0 ? regionParts.join(", ") : "-");
   const computedLocation = effectiveCity ? `${effectiveCity}${effectiveState ? `, ${effectiveState}` : ""}` : (computedFullAddress || "-");
+  const coverImg = item.coverUrl || item.cover_url || item.logoUrl || item.logo_url || undefined;
+
+  const latVal = item.latitude !== undefined && item.latitude !== null ? Number(item.latitude) : (meta.lat ? Number(meta.lat) : undefined);
+  const lonVal = item.longitude !== undefined && item.longitude !== null ? Number(item.longitude) : (meta.lon ? Number(meta.lon) : undefined);
 
   return {
     id: item.id,
@@ -973,5 +1061,9 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem | ApiBusinessD
     initials,
     color: "bg-emerald-100 text-emerald-900 border-emerald-200",
     features: [],
+    imageUrl: coverImg,
+    latitude: latVal,
+    longitude: lonVal,
   };
 }
+

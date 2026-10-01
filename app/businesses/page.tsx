@@ -1,9 +1,10 @@
 "use client";
 
+// Directory Catalog Page
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import { Business } from "@/lib/mock-data";
-import { fetchBusinesses, fetchCategoryFacets, mapApiBusinessToUiModel } from "@/lib/api-client";
+import { fetchBusinesses, fetchCategoryFacets, mapApiBusinessToUiModel, fetchBusinessPlaceImage } from "@/lib/api-client";
 import { categoryDisplayName, isRealBusinessCategory } from "@/lib/slug";
 import {
   Search,
@@ -13,7 +14,6 @@ import {
   Bookmark,
   ArrowRight,
   ShieldCheck,
-  Award,
   MessageSquare,
   Home,
   ChevronRight,
@@ -131,9 +131,30 @@ export default function BusinessesPage() {
         });
 
         if (res && res.data) {
-          setApiBusinesses(res.data.map(mapApiBusinessToUiModel));
+          const mapped = res.data.map(mapApiBusinessToUiModel);
+          setApiBusinesses(mapped);
           setTotalCount(res.pagination?.total || res.data.length);
           setTotalPages(res.pagination?.total_pages || 1);
+
+          // Lazy load dynamic place images from /business-places/search endpoint
+          mapped.forEach((biz) => {
+            if (!biz.imageUrl && biz.name) {
+              fetchBusinessPlaceImage(
+                biz.name,
+                biz.location || "Indonesia",
+                biz.latitude,
+                biz.longitude
+              )
+                .then((img) => {
+                  if (img) {
+                    setApiBusinesses((prev) =>
+                      prev.map((b) => (b.id === biz.id ? { ...b, imageUrl: img } : b))
+                    );
+                  }
+                })
+                .catch(() => {});
+            }
+          });
         }
       } catch (err) {
         console.warn("Error fetching API businesses:", err);
@@ -478,20 +499,31 @@ export default function BusinessesPage() {
                         className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-xl hover:shadow-slate-200/60 hover:border-[#008767]/40 transition-all flex flex-col justify-between"
                       >
                         <div>
-                          {/* Banner Container (No external photos as requested, styled brand card slot) */}
-                          <div className="relative h-32 bg-gradient-to-br from-slate-100 via-slate-50 to-emerald-50/40 p-3 border-b border-slate-100 flex items-start justify-between">
-                            {/* Verified / User Pick Badge Overlay */}
+                          {/* Banner Container with Dynamic Photo */}
+                          <div className="relative h-32 bg-slate-100 overflow-hidden p-3 border-b border-slate-100 flex items-start justify-between">
+                            {biz.imageUrl ? (
+                              <img
+                                src={biz.imageUrl}
+                                alt={biz.name}
+                                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-slate-50 to-emerald-50/40">
+                                <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                                  <Store className="w-20 h-20 text-slate-800" />
+                                </div>
+                              </div>
+                            )}
+                            {biz.imageUrl && (
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+                            )}
+
+                            {/* Verified Badge Overlay */}
                             <div className="z-10">
                               {biz.badge === "Terverifikasi" && (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs">
                                   <ShieldCheck className="w-3 h-3 text-emerald-600" />
                                   <span>Terverifikasi</span>
-                                </span>
-                              )}
-                              {biz.badge === "Pilihan Pengguna" && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-sky-200 shadow-2xs">
-                                  <Award className="w-3 h-3 text-sky-600" />
-                                  <span>Pilihan Pengguna</span>
                                 </span>
                               )}
                             </div>
@@ -514,11 +546,6 @@ export default function BusinessesPage() {
                                 }`}
                               />
                             </button>
-
-                            {/* Background Pattern Graphic */}
-                            <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                              <Store className="w-20 h-20 text-slate-800" />
-                            </div>
                           </div>
 
                           {/* Content Body */}

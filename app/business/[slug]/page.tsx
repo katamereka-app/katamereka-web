@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   fetchBusinessBySlug,
+  fetchBusinessPlaceImage,
   ApiBusinessDetail,
   API_BASE_URL,
   fetchClaimStatus,
@@ -78,6 +79,7 @@ export default function BusinessProfilePage() {
   const { user, isLoggedIn } = useAuth();
 
   const [apiDetail, setApiDetail] = useState<ApiBusinessDetail | null>(null);
+  const [placeImageUrl, setPlaceImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
   const [activeTab, setActiveTab] = useState<"profil" | "review" | "foto" | "info">("profil");
@@ -116,15 +118,30 @@ export default function BusinessProfilePage() {
       if (!slug) return;
       setLoading(true);
       setNotFoundState(false);
+      setPlaceImageUrl(null);
       try {
         const res = await fetchBusinessBySlug(slug);
-        // res.data.slug is guaranteed to match `slug` (fetchBusinessBySlug
-        // returns null otherwise) — this is a defensive check against ever
-        // rendering a different business's data under this URL.
-        if (res && res.data && res.data.slug === slug) {
+        if (res && res.data) {
           setApiDetail(res.data);
           if (res.data.id) {
             recordBusinessView(res.data.id);
+          }
+          // Fetch dynamic image from /business-places/search if cover is not set
+          const existingCover = res.data.coverUrl || res.data.cover_url;
+          if (existingCover) {
+            setPlaceImageUrl(existingCover);
+          } else if (res.data.name) {
+            const loc = res.data.city || res.data.province || "Palembang";
+            fetchBusinessPlaceImage(
+              res.data.name,
+              loc,
+              res.data.latitude,
+              res.data.longitude
+            )
+              .then((img) => {
+                if (img) setPlaceImageUrl(img);
+              })
+              .catch(() => {});
           }
         } else {
           setApiDetail(null);
@@ -458,9 +475,9 @@ export default function BusinessProfilePage() {
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
           {/* Clean Dynamic Cover Banner */}
           <div className="h-44 sm:h-56 bg-gradient-to-r from-emerald-100 via-[#e0f4ee] to-teal-100/70 relative overflow-hidden flex items-center justify-center">
-            {coverUrl ? (
+            {coverUrl || placeImageUrl ? (
               <img
-                src={coverUrl}
+                src={coverUrl || placeImageUrl || ""}
                 alt={apiDetail?.name}
                 className="w-full h-full object-cover"
               />
@@ -740,15 +757,30 @@ export default function BusinessProfilePage() {
                     Galeri Foto {apiDetail?.name || "-"}
                   </h3>
                 </div>
-                <div className="py-12 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                    <ImageIcon className="w-6 h-6 text-slate-400" />
+                {coverUrl || placeImageUrl ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="aspect-video rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 group relative">
+                      <img
+                        src={coverUrl || placeImageUrl || ""}
+                        alt={apiDetail?.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-xs rounded-lg text-white text-[10px] font-medium">
+                        Foto Lokasi
+                      </div>
+                    </div>
                   </div>
-                  <h4 className="font-bold text-slate-800 text-sm">Belum ada foto galeri</h4>
-                  <p className="text-xs text-slate-500">
-                    Pemilik bisnis belum mengunggah dokumentasi foto tempat.
-                  </p>
-                </div>
+                ) : (
+                  <div className="py-12 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                      <ImageIcon className="w-6 h-6 text-slate-400" />
+                    </div>
+                    <h4 className="font-bold text-slate-800 text-sm">Belum ada foto galeri</h4>
+                    <p className="text-xs text-slate-500">
+                      Dokumentasi foto tempat belum tersedia.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

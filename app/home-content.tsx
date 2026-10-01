@@ -33,13 +33,21 @@ import {
 } from "lucide-react";
 
 import Navbar from "@/components/navbar";
-import { fetchBusinesses, fetchPopularBusinesses, mapApiBusinessToUiModel, ApiCategoryFacet, ApiCityFacet } from "@/lib/api-client";
+import {
+  fetchBusinesses,
+  fetchPopularBusinesses,
+  fetchCategoryFacets,
+  fetchCityFacets,
+  mapApiBusinessToUiModel,
+  ApiCategoryFacet,
+  ApiCityFacet
+} from "@/lib/api-client";
 import { Business } from "@/lib/mock-data";
 import { slugify, categoryDisplayName, isRealBusinessCategory } from "@/lib/slug";
 
 interface HomeContentProps {
-  initialCategoryFacets: ApiCategoryFacet[];
-  initialCityFacets: ApiCityFacet[];
+  initialCategoryFacets?: ApiCategoryFacet[];
+  initialCityFacets?: ApiCityFacet[];
 }
 
 function getCategoryIconAndColor(categoryRaw: string, index: number) {
@@ -90,16 +98,13 @@ function getCategoryIconAndColor(categoryRaw: string, index: number) {
   return presets[index % presets.length];
 }
 
-export default function LandingPage({ initialCategoryFacets, initialCityFacets }: HomeContentProps) {
+export default function LandingPage({ initialCategoryFacets, initialCityFacets }: HomeContentProps = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [popularBusinesses, setPopularBusinesses] = useState<Business[]>([]);
-  // Fetched server-side (app/page.tsx) and passed in as props so these
-  // links are present in the initial HTML for crawlers, not only after
-  // client hydration.
-  const [categoryFacets] = useState<ApiCategoryFacet[]>(initialCategoryFacets);
-  const [cityFacets] = useState<ApiCityFacet[]>(initialCityFacets);
+  const [categoryFacets, setCategoryFacets] = useState<ApiCategoryFacet[]>(initialCategoryFacets || []);
+  const [cityFacets, setCityFacets] = useState<ApiCityFacet[]>(initialCityFacets || []);
 
   const searchRef = useRef<HTMLDivElement>(null);
   const categoryScrollRef = useRef<HTMLDivElement>(null);
@@ -114,6 +119,25 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       });
     }
   };
+
+  useEffect(() => {
+    async function loadFacets() {
+      try {
+        const [cats, cities] = await Promise.all([
+          fetchCategoryFacets(),
+          fetchCityFacets(),
+        ]);
+        if (cats && cats.length > 0) setCategoryFacets(cats);
+        if (cities && cities.length > 0) setCityFacets(cities);
+      } catch (err) {
+        console.warn("Error loading category/city facets:", err);
+      }
+    }
+
+    if (!initialCategoryFacets || initialCategoryFacets.length === 0) {
+      loadFacets();
+    }
+  }, [initialCategoryFacets]);
 
   useEffect(() => {
     async function loadPopular() {
