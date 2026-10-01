@@ -226,55 +226,45 @@ export async function fetchBusinesses(
 
     if (res.ok) {
       const data = await res.json();
+      if (Array.isArray(data?.data) && data.data.length > 0) {
+        data.data = await Promise.all(
+          data.data.map(async (item: ApiBusinessListItem) => {
+            if (item.slug) {
+              try {
+                const detailRes = await fetch(`${API_BASE_URL}/businesses/slug/${encodeURIComponent(item.slug)}`, {
+                  cache: "no-store",
+                });
+                if (detailRes.ok) {
+                  const detailJson = await detailRes.json();
+                  if (detailJson.success && detailJson.data) {
+                    return {
+                      ...item,
+                      averageRating: detailJson.data.average_rating ?? detailJson.data.averageRating ?? detailJson.data.rating ?? null,
+                      reviewCount: detailJson.data.review_count ?? detailJson.data.reviewCount ?? detailJson.data.reviews_count ?? 0,
+                    };
+                  }
+                }
+              } catch (err) {
+                // Ignore single detail fetch failure
+              }
+            }
+            return item;
+          })
+        );
+      }
       return data;
     }
   } catch (e) {
-    console.warn("fetchBusinesses API call failed, falling back to mock data:", e);
+    console.warn("fetchBusinesses API call failed:", e);
   }
-
-  // Fallback to local filtering if API unreachable
-  let filtered = [...mockBusinesses];
-  if (params.search) {
-    const q = params.search.toLowerCase();
-    filtered = filtered.filter(
-      (b) =>
-        b.name.toLowerCase().includes(q) ||
-        b.location.toLowerCase().includes(q) ||
-        b.category.toLowerCase().includes(q)
-    );
-  }
-  if (params.city) {
-    const c = params.city.toLowerCase();
-    filtered = filtered.filter((b) => b.location.toLowerCase().includes(c));
-  }
-  if (params.category && params.category !== "Semua") {
-    const cat = params.category.toLowerCase();
-    filtered = filtered.filter((b) => b.category.toLowerCase().includes(cat));
-  }
-
-  const page = params.page || 1;
-  const limit = params.limit || 20;
-  const total = filtered.length;
-  const total_pages = Math.ceil(total / limit) || 1;
-  const paged = filtered.slice((page - 1) * limit, page * limit);
 
   return {
-    data: paged.map((b) => ({
-      id: b.id,
-      name: b.name,
-      slug: b.slug,
-      address: b.address || b.location,
-      city: b.location.split(",")[0] || b.location,
-      province: b.location.split(",")[1]?.trim() || "DKI Jakarta",
-      category: b.category,
-      rating: b.rating,
-      reviews_count: b.reviewCount,
-    })),
+    data: [],
     pagination: {
-      page,
-      limit,
-      total,
-      total_pages,
+      page: params.page || 1,
+      limit: params.limit || 20,
+      total: 0,
+      total_pages: 1,
     },
   };
 }
@@ -384,12 +374,10 @@ export async function fetchCategoryFacets(): Promise<ApiCategoryFacet[]> {
       if (Array.isArray(json?.data)) return json.data;
     }
   } catch (e) {
-    console.warn("fetchCategoryFacets API call failed, falling back to mock categories:", e);
+    console.warn("fetchCategoryFacets API call failed:", e);
   }
 
-  return mockCategories
-    .filter((c) => c.status === "ACTIVE")
-    .map((c) => ({ category: c.name, count: c.businessCount }));
+  return [];
 }
 
 /**
@@ -405,12 +393,10 @@ export async function fetchCityFacets(): Promise<ApiCityFacet[]> {
       if (Array.isArray(json?.data)) return json.data;
     }
   } catch (e) {
-    console.warn("fetchCityFacets API call failed, falling back to mock cities:", e);
+    console.warn("fetchCityFacets API call failed:", e);
   }
 
-  return mockCities
-    .filter((c) => c.status === "ACTIVE")
-    .map((c) => ({ city: c.name, count: c.businessCount }));
+  return [];
 }
 
 /**
@@ -447,55 +433,10 @@ export async function fetchBusinessBySlug(
       );
     }
   } catch (e) {
-    console.warn("fetchBusinessBySlug API call failed, using mock fallback:", e);
+    console.warn("fetchBusinessBySlug API call failed:", e);
   }
 
-  // Dev/offline fallback to local mock data — matched strictly by slug, no
-  // "or the first mock business" fallback, so an unknown slug is never
-  // rendered as some other business.
-  const found = mockBusinesses.find((b) => b.slug === slug);
-  if (!found) return null;
-
-  return {
-    message: "Berhasil mengambil detail bisnis dari Katamereka Engine",
-    data: {
-      id: found.id,
-      name: found.name,
-      slug: found.slug,
-      externalSource: "GEOAPIFY",
-      externalId: "mock-geoapify-id-" + found.id,
-      address: found.address || "Jl. Sudirman No. 100",
-      city: found.location,
-      province: "Jawa Barat",
-      country: "ID",
-      postalCode: "40111",
-      latitude: -6.9174639,
-      longitude: 107.6191228,
-      phone: undefined,
-      email: undefined,
-      website: undefined,
-      category: found.category,
-      categories: [found.category],
-      externalRating: "0",
-      externalReviewsCount: 0,
-      rating: 0,
-      reviews_count: 0,
-      status: "ACTIVE",
-      externalSyncedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      members: [
-        {
-          id: "mem-1",
-          userId: "usr-1",
-          name: "Pemilik Bisnis",
-          email: `owner@${found.slug}.id`,
-          role: "OWNER",
-          createdAt: new Date().toISOString(),
-        },
-      ],
-    },
-  };
+  return null;
 }
 
 /**
@@ -523,12 +464,10 @@ export async function fetchBusinessById(
       if (data?.data?.id === id) return data;
     }
   } catch (e) {
-    console.warn("fetchBusinessById API call failed, using mock fallback:", e);
+    console.warn("fetchBusinessById API call failed:", e);
   }
 
-  const found = mockBusinesses.find((b) => b.id === id);
-  if (!found) return null;
-  return fetchBusinessBySlug(found.slug);
+  return null;
 }
 
 /**
@@ -913,20 +852,25 @@ export async function rejectBusinessClaim(
  * UI Adapter to convert ApiBusinessListItem to UI Business Model
  */
 export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
-  let parsedRating = typeof item.rating === "number"
-    ? item.rating
-    : parseFloat(String(item.rating || ""));
-  if (isNaN(parsedRating)) parsedRating = 0;
+  const rawRating = (item as any).averageRating ?? (item as any).average_rating ?? null;
+  const rawCount = (item as any).reviewCount ?? (item as any).review_count ?? null;
 
-  let reviewsCountVal = typeof item.reviews_count === "number"
-    ? item.reviews_count
-    : (parseInt(String(item.reviews_count || 0), 10) || 0);
+  let parsedRating = 0;
+  let reviewsCountVal = 0;
 
-  // Sanitize Geoapify external defaults: review count of exactly 12 is always
-  // the Geoapify external default, never a real user review count on Katamereka.
-  if (reviewsCountVal === 12) {
+  if (rawCount !== null && rawCount !== undefined) {
+    const c = typeof rawCount === "number" ? rawCount : parseInt(String(rawCount), 10);
+    if (!isNaN(c) && c > 0) reviewsCountVal = c;
+  }
+
+  if (rawRating !== null && rawRating !== undefined) {
+    const r = typeof rawRating === "number" ? rawRating : parseFloat(String(rawRating));
+    if (!isNaN(r) && r > 0) parsedRating = r;
+  }
+
+  // Zero out if 0 reviews (ignore static Geoapify placeholder 4.50 / 12)
+  if (reviewsCountVal === 0) {
     parsedRating = 0;
-    reviewsCountVal = 0;
   }
 
   const initials = item.name
@@ -953,9 +897,9 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
     address: item.address || "-",
     rating: parsedRating > 0 ? Number(parsedRating.toFixed(1)) : 0,
     reviewCount: reviewsCountVal,
-    reviewCountFormatted: `${reviewsCountVal} ulasan`,
+    reviewCountFormatted: reviewsCountVal > 0 ? `${reviewsCountVal} ulasan` : "0 ulasan",
     description: "-",
-    badge: parsedRating >= 4.5 ? "Terverifikasi" : "Pilihan Pengguna",
+    badge: parsedRating >= 4.5 && reviewsCountVal > 0 ? "Terverifikasi" : "Pilihan Pengguna",
     initials,
     color: "bg-emerald-100 text-emerald-900 border-emerald-200",
     features: [],

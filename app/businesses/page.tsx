@@ -541,12 +541,18 @@ export default function BusinessesPage() {
                             </div>
 
                             {/* Rating */}
-                            <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold">
-                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                              <span>{biz.rating}</span>
-                              <span className="text-slate-400 font-normal">
-                                ({biz.reviewCountFormatted})
-                              </span>
+                            <div className="flex items-center gap-1 text-xs font-semibold">
+                              {biz.rating > 0 && biz.reviewCount > 0 ? (
+                                <>
+                                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                  <span className="text-amber-500">{biz.rating.toFixed(1)}</span>
+                                  <span className="text-slate-400 font-normal">
+                                    ({biz.reviewCountFormatted})
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-slate-400 font-normal">-</span>
+                              )}
                             </div>
 
                             {/* Description */}
