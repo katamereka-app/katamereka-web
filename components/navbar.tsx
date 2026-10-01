@@ -316,10 +316,6 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 font-medium">@{user.username}</p>
-                    {/* TEMP DEBUG — remove once businessRole mismatch is confirmed fixed */}
-                    <p className="text-[9px] text-red-500 font-mono">
-                      debug: platformRole={String(user.platformRole)} businessRole={String(user.businessRole)}
-                    </p>
                   </div>
 
                   <div className="py-1 text-xs font-semibold text-slate-700">
@@ -357,14 +353,16 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
                       <span>Profil Sesi Log</span>
                     </Link>
 
-                    <Link
-                      href="/ulasan"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 hover:text-[#008767] transition-colors"
-                    >
-                      <Star className="w-4 h-4 text-slate-400" />
-                      <span>Kelola Ulasan</span>
-                    </Link>
+                    {user.role === "bisnis" && (
+                      <Link
+                        href="/ulasan"
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-slate-50 hover:text-[#008767] transition-colors"
+                      >
+                        <Star className="w-4 h-4 text-slate-400" />
+                        <span>Kelola Ulasan</span>
+                      </Link>
+                    )}
                   </div>
 
                   <div className="pt-1 border-t border-slate-100">

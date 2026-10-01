@@ -28,14 +28,19 @@ import {
 } from "lucide-react";
 
 import Navbar from "@/components/navbar";
+import { useAuth } from "@/lib/auth-context";
+import { toast } from "sonner";
+import { fetchMyFavorites, toggleFavorite, unfavoriteBusiness } from "@/lib/api-profile";
 
 export default function BusinessesPage() {
+  const { isLoggedIn } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Semua Kategori");
   const [selectedLocation, setSelectedLocation] = useState("Semua Lokasi");
   const [selectedRating, setSelectedRating] = useState("Semua Rating");
   const [sortBy, setSortBy] = useState("Terpopuler");
   const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+  const [togglingFavId, setTogglingFavId] = useState<string | null>(null);
   const [apiBusinesses, setApiBusinesses] = useState<Business[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -137,6 +142,28 @@ export default function BusinessesPage() {
     loadApiBusinesses();
   }, [searchQuery, selectedCategory, selectedLocation, selectedRating, sortBy, currentPage]);
 
+  // Fetch user favorites when logged in
+  useEffect(() => {
+    async function loadUserFavorites() {
+      if (!isLoggedIn) return;
+      try {
+        const res = await fetchMyFavorites();
+        if (res?.success && Array.isArray(res.data)) {
+          const map: Record<string, boolean> = {};
+          res.data.forEach((fav) => {
+            if (fav.business?.id) {
+              map[fav.business.id] = true;
+            }
+          });
+          setFavorites(map);
+        }
+      } catch (err) {
+        console.warn("Failed fetching user favorites:", err);
+      }
+    }
+    loadUserFavorites();
+  }, [isLoggedIn]);
+
   const resetFilters = () => {
     setSearchQuery("");
     setSelectedCategory("Semua Kategori");
@@ -146,9 +173,40 @@ export default function BusinessesPage() {
     setCurrentPage(1);
   };
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (id: string, e: React.MouseEvent) => {
     e.preventDefault();
-    setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+    e.stopPropagation();
+    if (!isLoggedIn) {
+      toast.error("Silakan login terlebih dahulu untuk menyimpan bisnis");
+      return;
+    }
+    if (togglingFavId === id) return;
+
+    setTogglingFavId(id);
+    const isFav = !!favorites[id];
+    try {
+      if (isFav) {
+        const res = await unfavoriteBusiness(id);
+        if (res?.success) {
+          setFavorites((prev) => ({ ...prev, [id]: false }));
+          toast.success("Bisnis berhasil dihapus dari daftar favorit");
+        } else {
+          toast.error(res?.message || "Gagal menghapus favorit");
+        }
+      } else {
+        const res = await toggleFavorite(id);
+        if (res?.success) {
+          setFavorites((prev) => ({ ...prev, [id]: true }));
+          toast.success("Bisnis berhasil ditambahkan ke daftar favorit");
+        } else {
+          toast.error(res?.message || "Gagal menyimpan favorit");
+        }
+      }
+    } catch {
+      toast.error("Terjadi kesalahan saat memproses favorit");
+    } finally {
+      setTogglingFavId(null);
+    }
   };
 
   // Filtered & Sorted Businesses from API
@@ -440,10 +498,11 @@ export default function BusinessesPage() {
 
                             {/* Save Button */}
                             <button
-                              onClick={(e) => toggleFavorite(biz.id, e)}
-                              aria-label="Simpan"
-                              title={isFav ? "Hapus dari tersimpan" : "Simpan bisnis ini"}
-                              className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-2xs transition-all z-10 ${
+                              onClick={(e) => handleToggleFavorite(biz.id, e)}
+                              disabled={togglingFavId === biz.id}
+                              aria-label="Favorit"
+                              title={isFav ? "Hapus dari favorit" : "Tambah ke favorit"}
+                              className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-2xs transition-all z-10 disabled:opacity-50 ${
                                 isFav
                                   ? "bg-[#e8f6f2] border-[#008767]/30 text-[#008767]"
                                   : "bg-white/90 backdrop-blur-xs border-slate-200 text-slate-400 hover:border-[#008767]/40 hover:text-[#008767]"
@@ -581,18 +640,7 @@ export default function BusinessesPage() {
                 Suara nyata, keputusan lebih baik. Platform ulasan terpercaya di Indonesia.
               </p>
               
-              {/* Social Icons */}
-              <div className="flex items-center gap-3 pt-2">
-                {["Instagram", "TikTok", "X", "YouTube"].map((soc, idx) => (
-                  <button
-                    key={idx}
-                    aria-label={soc}
-                    className="w-9 h-9 rounded-full bg-slate-100 hover:bg-[#008767] hover:text-white flex items-center justify-center text-slate-600 text-xs font-semibold transition-colors"
-                  >
-                    {soc[0]}
-                  </button>
-                ))}
-              </div>
+
             </div>
 
             {/* Links Column 1: Tautan Cepat */}

@@ -21,6 +21,17 @@ interface CategoryClientProps {
   cityList: string[];
 }
 
+function formatCategoryUnitLabel(categoryName: string): string {
+  const lower = categoryName.toLowerCase();
+  if (lower.includes("hotel") || lower.includes("akomodasi")) return "hotel";
+  if (lower.includes("restoran") || lower.includes("kuliner") || lower.includes("makan")) return "restoran & tempat makan";
+  if (lower.includes("kafe") || lower.includes("coffee") || lower.includes("kopi")) return "kafe";
+  if (lower.includes("kecantikan") || lower.includes("salon") || lower.includes("spa")) return "layanan kecantikan";
+  if (lower.includes("otomotif") || lower.includes("bengkel")) return "tempat otomotif";
+  if (lower.includes("belanja") || lower.includes("supermarket") || lower.includes("ritel")) return "tempat belanja";
+  return categoryName.toLowerCase();
+}
+
 function getCategoryHeroCover(name: string): string {
   const lower = name.toLowerCase();
   if (lower.includes("hotel") || lower.includes("akomodasi") || lower.includes("menginap")) {
@@ -79,99 +90,8 @@ export default function CategoryClient({
   const itemsPerPage = 6;
 
   const uiBusinesses = useMemo(() => {
-    if (initialBusinesses && initialBusinesses.length > 0) {
-      return initialBusinesses.map(mapApiBusinessToUiModel);
-    }
-
-    // Dynamic mock list tailored to category if DB empty
-    const isHotel = categoryName.toLowerCase().includes("hotel");
-    return [
-      {
-        id: "1",
-        name: isHotel ? "Pullman Jakarta Central Park" : `${categoryName} Central Park`,
-        slug: isHotel ? "pullman-jakarta-central-park" : "central-park",
-        category: categoryName,
-        rating: 4.7,
-        reviewCount: 1248,
-        reviewCountFormatted: "1.248 ulasan",
-        location: "Jakarta Barat",
-        address: "Jakarta Barat",
-        coverUrl: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&auto=format&fit=crop&q=80",
-        badge: "Terverifikasi",
-        initials: "P",
-      },
-      {
-        id: "2",
-        name: isHotel ? "The Ritz-Carlton Jakarta, Pacific Place" : `${categoryName} Pacific Place`,
-        slug: isHotel ? "the-ritz-carlton-jakarta" : "pacific-place",
-        category: categoryName,
-        rating: 4.8,
-        reviewCount: 986,
-        reviewCountFormatted: "986 ulasan",
-        location: "Jakarta Selatan",
-        address: "Jakarta Selatan",
-        coverUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80",
-        badge: "Terverifikasi",
-        initials: "R",
-      },
-      {
-        id: "3",
-        name: isHotel ? "AYANA Resort Bali" : `${categoryName} Resort Bali`,
-        slug: isHotel ? "ayana-resort-bali" : "resort-bali",
-        category: categoryName,
-        rating: 4.9,
-        reviewCount: 2304,
-        reviewCountFormatted: "2.304 ulasan",
-        location: "Bali",
-        address: "Bali",
-        coverUrl: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&auto=format&fit=crop&q=80",
-        badge: "Terverifikasi",
-        initials: "A",
-      },
-      {
-        id: "4",
-        name: isHotel ? "Hotel Grandhika Setiabudi" : `${categoryName} Grandhika Setiabudi`,
-        slug: isHotel ? "hotel-grandhika-setiabudi" : "grandhika-setiabudi",
-        category: categoryName,
-        rating: 4.5,
-        reviewCount: 652,
-        reviewCountFormatted: "652 ulasan",
-        location: "Jakarta Selatan",
-        address: "Jakarta Selatan",
-        coverUrl: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&auto=format&fit=crop&q=80",
-        badge: "Terverifikasi",
-        initials: "G",
-      },
-      {
-        id: "5",
-        name: isHotel ? "Padma Hotel Bandung" : `${categoryName} Padma Bandung`,
-        slug: isHotel ? "padma-hotel-bandung" : "padma-bandung",
-        category: categoryName,
-        rating: 4.6,
-        reviewCount: 1023,
-        reviewCountFormatted: "1.023 ulasan",
-        location: "Bandung",
-        address: "Bandung",
-        coverUrl: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&auto=format&fit=crop&q=80",
-        badge: "Terverifikasi",
-        initials: "P",
-      },
-      {
-        id: "6",
-        name: isHotel ? "Hotel Santika Premiere Gubeng" : `${categoryName} Santika Gubeng`,
-        slug: isHotel ? "hotel-santika-premiere-gubeng" : "santika-gubeng",
-        category: categoryName,
-        rating: 4.4,
-        reviewCount: 489,
-        reviewCountFormatted: "489 ulasan",
-        location: "Surabaya",
-        address: "Surabaya",
-        coverUrl: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=600&auto=format&fit=crop&q=80",
-        badge: "Terverifikasi",
-        initials: "S",
-      },
-    ];
-  }, [initialBusinesses, categoryName]);
+    return (initialBusinesses || []).map(mapApiBusinessToUiModel);
+  }, [initialBusinesses]);
 
   const filteredBusinesses = useMemo(() => {
     return uiBusinesses.filter((b) => {
@@ -293,7 +213,7 @@ export default function CategoryClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 sm:px-6 sm:py-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
         {/* Count / Info */}
         <p className="text-xs sm:text-sm font-medium text-slate-600">
-          Menampilkan <span className="font-bold text-slate-900">{sortedBusinesses.length}</span> {categoryName.toLowerCase()}
+          Menampilkan <span className="font-bold text-slate-900">{sortedBusinesses.length}</span> {formatCategoryUnitLabel(categoryName)}
         </p>
 
         {/* Dropdowns Container */}
