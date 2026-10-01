@@ -273,19 +273,17 @@ function SearchContent() {
                         </div>
 
                         {/* Rating Stars & Count */}
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                          {item.rating > 0 ? (
+                        <div className="flex items-center gap-1.5 text-xs font-bold">
+                          {item.rating > 0 && item.reviewCount > 0 ? (
                             <>
-                              <div className="flex text-amber-400 text-sm">
-                                {"★".repeat(Math.min(Math.floor(item.rating), 5))}
-                              </div>
-                              <span>{item.rating}</span>
+                              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                              <span className="text-amber-500">{item.rating.toFixed(1)}</span>
                               <span className="text-slate-400 font-normal">
                                 ({item.reviewCountFormatted})
                               </span>
                             </>
                           ) : (
-                            <span className="text-slate-400 font-normal">0 ulasan</span>
+                            <span className="text-slate-400 font-normal">-</span>
                           )}
                         </div>
 

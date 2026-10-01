@@ -282,27 +282,34 @@ export default function BusinessProfilePage() {
         .toUpperCase()
     : "KM";
 
-  // Priority: reviewCount (real API) > reviews_count (legacy) > externalReviewsCount
-  let reviewCountVal =
-    apiDetail?.reviewCount ?? apiDetail?.reviews_count ?? apiDetail?.externalReviewsCount ?? 0;
-  if (typeof reviewCountVal !== "number" || isNaN(reviewCountVal)) reviewCountVal = 0;
+  // Dynamic review count from API (reviewCount, reviewsCount, reviews_count, externalReviewsCount)
+  const rawReviewCount =
+    (apiDetail as any)?.reviewCount ??
+    (apiDetail as any)?.review_count ??
+    (apiDetail as any)?.reviewsCount ??
+    apiDetail?.reviews_count ??
+    apiDetail?.externalReviewsCount ??
+    0;
+  let reviewCountVal = typeof rawReviewCount === "number" ? rawReviewCount : (parseInt(String(rawReviewCount || 0), 10) || 0);
+  if (isNaN(reviewCountVal)) reviewCountVal = 0;
 
-  // Sanitize Geoapify external defaults (reviews_count of 12 = no real reviews)
-  if (reviewCountVal === 12) {
-    reviewCountVal = 0;
+  // Dynamic average rating from API (averageRating, rating, externalRating)
+  const rawRating =
+    (apiDetail as any)?.averageRating ??
+    (apiDetail as any)?.average_rating ??
+    apiDetail?.rating ??
+    apiDetail?.externalRating ??
+    (apiDetail as any)?.external_rating ??
+    null;
+  let ratingVal = 0;
+  if (rawRating !== null && rawRating !== undefined) {
+    const parsed = typeof rawRating === "number" ? rawRating : parseFloat(String(rawRating));
+    if (!isNaN(parsed) && parsed > 0) {
+      ratingVal = parsed;
+    }
   }
 
-  // Priority: averageRating (real Katamereka reviews) > rating (legacy)
-  // If reviewCountVal is 0, average rating is ALWAYS 0!
-  let ratingVal = (() => {
-    if (reviewCountVal === 0) return 0;
-    const r = apiDetail?.averageRating ?? apiDetail?.rating ?? null;
-    if (r === null || r === undefined) return 0;
-    const parsed = typeof r === "number" ? r : parseFloat(String(r));
-    return isNaN(parsed) ? 0 : parsed;
-  })();
-
-  const ratingFormatted = (reviewCountVal > 0 && ratingVal > 0) ? ratingVal.toFixed(1) : "0.0";
+  const ratingFormatted = ratingVal > 0 ? ratingVal.toFixed(1) : "0.0";
   const reviewCountFormatted = `${reviewCountVal} ulasan`;
 
   let formattedCategory = apiDetail?.category || "-";
@@ -502,11 +509,17 @@ export default function BusinessProfilePage() {
                   <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm">
                     {/* Rating */}
                     <div className="flex items-center gap-1 font-bold text-slate-800">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span>{ratingFormatted}</span>
-                      <span className="text-slate-400 font-normal">
-                        ({reviewCountFormatted})
-                      </span>
+                      {reviewCountVal > 0 && ratingVal > 0 ? (
+                        <>
+                          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                          <span>{ratingFormatted}</span>
+                          <span className="text-slate-400 font-normal">
+                            ({reviewCountFormatted})
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-slate-400 font-normal font-medium">-</span>
+                      )}
                     </div>
 
                     {/* Badge */}
@@ -801,10 +814,10 @@ export default function BusinessProfilePage() {
                 <Star className="w-8 h-8 fill-amber-400 text-amber-400" />
                 <div>
                   <div className="text-2xl font-extrabold text-slate-900 leading-none">
-                    {ratingFormatted}
+                    {reviewCountVal > 0 && ratingVal > 0 ? ratingFormatted : "-"}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5 font-medium">
-                    ({reviewCountFormatted})
+                    {reviewCountVal > 0 ? `(${reviewCountFormatted})` : "Belum ada ulasan"}
                   </p>
                 </div>
               </div>
