@@ -21,9 +21,11 @@ import type { Review } from "@/lib/types"
 export function ReviewDetailPanel({
   review,
   onClose,
+  onReply,
 }: {
   review: Review
   onClose: () => void
+  onReply?: (content: string) => Promise<boolean>
 }) {
   const initials = review.reviewerName
     .split(" ")
@@ -113,7 +115,7 @@ export function ReviewDetailPanel({
         )}
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          {!review.reply && <ReplyDialog review={review} triggerVariant="outline" />}
+          {!review.reply && <ReplyDialog review={review} triggerVariant="outline" onSubmit={onReply} />}
           <Button
             variant="outline"
             size="sm"

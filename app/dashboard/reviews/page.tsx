@@ -10,7 +10,6 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { useBusinessContext } from "@/components/business-provider"
 import { DashboardBreadcrumb } from "@/components/dashboard-breadcrumb"
 import { DateRangeSelector } from "@/components/date-range-selector"
 import { FilterDropdown } from "@/components/filter-dropdown"
@@ -46,8 +45,30 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { downloadCsv } from "@/lib/csv"
 import { formatDateTime } from "@/lib/format"
-import { getReviewsByBusiness } from "@/lib/mock/reviews"
-import type { Review } from "@/lib/types"
+import { useAuth } from "@/lib/auth-context"
+import {
+  createReviewReply,
+  fetchDashboardReviews,
+  fetchMyBusinessDetail,
+  fetchMyBusinesses,
+  fetchReviewReportsSummary,
+  type ApiDashboardReview,
+  type DashboardReviewSource,
+  type DashboardReviewsQuery,
+} from "@/lib/api-business-dashboard"
+import type { ModerationStatus, Review } from "@/lib/types"
+
+// This page is the one menu wired to the real backend — everything else in
+// the dashboard still runs on the mock BusinessProvider (see business-provider.tsx),
+// so it resolves its own active business via /my-businesses instead of
+// useBusinessContext(), which would hand it a fake mock id like "b1".
+interface ActiveBusiness {
+  id: string
+  name: string
+  slug: string
+  averageRating: number
+  totalReviews: number
+}
 
 const TABS = [
   { value: "all", label: "Semua" },
@@ -77,16 +98,57 @@ const VERIFIED_OPTIONS = [
   { value: "unverified", label: "Unverified" },
 ]
 
+const SOURCE_LABEL: Record<DashboardReviewSource, "Google" | "Website" | "KataMereka"> = {
+  GOOGLE: "Google",
+  WEBSITE: "Website",
+  KATAMEREKA: "KataMereka",
+}
+
 function reviewStatus(review: Review): "Dibalas" | "Belum Dibalas" | "Dilaporkan" {
   if (review.reportCount > 0) return "Dilaporkan"
   if (review.reply) return "Dibalas"
   return "Belum Dibalas"
 }
 
+function moderationStatusOf(review: ApiDashboardReview): ModerationStatus {
+  if (review.status === "HIDDEN") return "HIDDEN"
+  if (review.status === "REMOVED") return "REMOVED"
+  if (review.report_count > 0) return "UNDER_INVESTIGATION"
+  return "KEPT"
+}
+
+function mapApiReviewToUiReview(r: ApiDashboardReview, business: ActiveBusiness): Review {
+  return {
+    id: r.id,
+    businessId: business.id,
+    businessName: business.name,
+    reviewerId: r.user?.id ?? "",
+    reviewerName: r.user?.name ?? "Pengguna KataMereka",
+    rating: Math.min(5, Math.max(1, r.rating)) as 1 | 2 | 3 | 4 | 5,
+    content: r.content,
+    isVerified: r.is_verified,
+    status: r.status,
+    moderationStatus: moderationStatusOf(r),
+    reportCount: r.report_count,
+    source: SOURCE_LABEL[r.source],
+    reply: r.reply
+      ? {
+          content: r.reply.content,
+          repliedAt: r.reply.created_at,
+          repliedBy: r.reply.author?.name ?? "Admin Bisnis",
+        }
+      : undefined,
+    createdAt: r.created_at,
+  }
+}
+
 export default function DashboardReviewsPage() {
-  const { selectedBusiness } = useBusinessContext()
+  const { isLoggedIn } = useAuth()
+  const [activeBusiness, setActiveBusiness] = React.useState<ActiveBusiness | null>(null)
+  const [isBusinessLoading, setIsBusinessLoading] = React.useState(true)
   const [tab, setTab] = React.useState<string>("all")
   const [search, setSearch] = React.useState("")
+  const [debouncedSearch, setDebouncedSearch] = React.useState("")
   const [ratingFilter, setRatingFilter] = React.useState("all")
   const [statusFilter, setStatusFilter] = React.useState("all")
   const [verifiedFilter, setVerifiedFilter] = React.useState("all")
@@ -94,33 +156,147 @@ export default function DashboardReviewsPage() {
   const [sourceFilter, setSourceFilter] = React.useState("all")
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
 
-  if (!selectedBusiness) return null
+  const [apiReviews, setApiReviews] = React.useState<ApiDashboardReview[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [loadError, setLoadError] = React.useState<string | undefined>()
+  const [unrepliedCount, setUnrepliedCount] = React.useState(0)
+  const [reportedCount, setReportedCount] = React.useState(0)
+  const [refreshKey, setRefreshKey] = React.useState(0)
 
-  const reviews = getReviewsByBusiness(selectedBusiness.id)
-  const unrepliedCount = reviews.filter((r) => !r.reply).length
-  const reportedCount = reviews.filter((r) => r.reportCount > 0).length
+  React.useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
-  const filtered = reviews.filter((review) => {
-    if (tab === "unreplied" && review.reply) return false
-    if (tab === "reported" && review.reportCount === 0) return false
-    if (ratingFilter !== "all" && String(review.rating) !== ratingFilter) return false
-    if (statusFilter !== "all" && reviewStatus(review) !== statusFilter) return false
-    if (verifiedFilter === "verified" && !review.isVerified) return false
-    if (verifiedFilter === "unverified" && review.isVerified) return false
-    if (sourceFilter !== "all" && review.source !== sourceFilter) return false
-    if (
-      search &&
-      !review.reviewerName.toLowerCase().includes(search.toLowerCase()) &&
-      !review.content.toLowerCase().includes(search.toLowerCase())
+  React.useEffect(() => {
+    let cancelled = false
+
+    if (!isLoggedIn) {
+      setActiveBusiness(null)
+      setIsBusinessLoading(false)
+      return
+    }
+
+    setIsBusinessLoading(true)
+    ;(async () => {
+      const mine = await fetchMyBusinesses()
+      if (cancelled) return
+
+      const first = mine[0]
+      if (!first) {
+        setActiveBusiness(null)
+        setIsBusinessLoading(false)
+        return
+      }
+
+      const detail = await fetchMyBusinessDetail(first.id)
+      if (cancelled) return
+
+      setActiveBusiness({
+        id: first.id,
+        name: detail?.name ?? first.name,
+        slug: detail?.slug ?? first.slug,
+        averageRating: Number(detail?.averageRating ?? detail?.rating ?? 0) || 0,
+        totalReviews: Number(detail?.reviewCount ?? detail?.reviews_count ?? 0) || 0,
+      })
+      setIsBusinessLoading(false)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isLoggedIn])
+
+  const businessId = activeBusiness?.id
+
+  const query = React.useMemo<DashboardReviewsQuery>(() => {
+    const reported = tab === "reported" || statusFilter === "Dilaporkan"
+    let reply_status: DashboardReviewsQuery["reply_status"] = "ALL"
+    if (tab === "unreplied" || statusFilter === "Belum Dibalas") reply_status = "UNREPLIED"
+    else if (statusFilter === "Dibalas") reply_status = "REPLIED"
+
+    return {
+      limit: 200,
+      sort: "NEWEST",
+      rating: ratingFilter !== "all" ? Number(ratingFilter) : undefined,
+      reply_status,
+      reported: reported || undefined,
+      verified: verifiedFilter === "verified" ? true : verifiedFilter === "unverified" ? false : undefined,
+      source: sourceFilter !== "all" ? (sourceFilter.toUpperCase() as DashboardReviewSource) : undefined,
+      search: debouncedSearch || undefined,
+    }
+  }, [tab, ratingFilter, statusFilter, verifiedFilter, sourceFilter, debouncedSearch])
+
+  React.useEffect(() => {
+    if (!businessId) return
+    let cancelled = false
+    setIsLoading(true)
+    setLoadError(undefined)
+
+    fetchDashboardReviews(businessId, query)
+      .then((res) => {
+        if (cancelled) return
+        setApiReviews(res.data)
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError("Gagal memuat review. Coba muat ulang halaman.")
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [businessId, query, refreshKey])
+
+  React.useEffect(() => {
+    if (!businessId) return
+    let cancelled = false
+
+    Promise.all([
+      fetchDashboardReviews(businessId, { reply_status: "UNREPLIED", limit: 1 }),
+      fetchReviewReportsSummary(businessId),
+    ]).then(([unreplied, reports]) => {
+      if (cancelled) return
+      setUnrepliedCount(unreplied.pagination.total)
+      setReportedCount(reports.pending)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [businessId, refreshKey])
+
+  if (isBusinessLoading) return null
+  if (!activeBusiness) {
+    return (
+      <div className="flex flex-col gap-4">
+        <DashboardBreadcrumb items={[{ label: "Reviews" }]} />
+        <p className="text-sm text-muted-foreground">
+          Anda belum terhubung dengan bisnis mana pun. Klaim atau daftarkan bisnis Anda terlebih dahulu.
+        </p>
+      </div>
     )
-      return false
-    return true
-  })
+  }
 
-  const sorted = [...filtered].sort(
+  const reviews = apiReviews.map((r) => mapApiReviewToUiReview(r, activeBusiness))
+  const sorted = [...reviews].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   )
   const selectedReview = sorted.find((r) => r.id === selectedId) ?? sorted[0] ?? null
+
+  async function handleReply(reviewId: string, content: string): Promise<boolean> {
+    if (!businessId) return false
+    const res = await createReviewReply(businessId, reviewId, content)
+    if (!res.success) {
+      toast.error(res.message || "Gagal mengirim balasan.")
+      return false
+    }
+    toast.success("Balasan berhasil dikirim.")
+    setRefreshKey((k) => k + 1)
+    return true
+  }
 
   const columns: ResourceTableColumn<Review>[] = [
     {
@@ -200,11 +376,6 @@ export default function DashboardReviewsPage() {
                   Balas
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem
-                onClick={() => toast.info("Review dilaporkan untuk ditinjau tim KataMereka.")}
-              >
-                Laporkan
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -218,12 +389,12 @@ export default function DashboardReviewsPage() {
 
       <PageHeader
         title="Reviews"
-        description={`Kelola semua review yang diterima oleh ${selectedBusiness.name}. Balas review dan jaga reputasi bisnis Anda.`}
+        description={`Kelola semua review yang diterima oleh ${activeBusiness.name}. Balas review dan jaga reputasi bisnis Anda.`}
         action={
           <Button
             onClick={() =>
               downloadCsv(
-                `reviews-${selectedBusiness.slug}.csv`,
+                `reviews-${activeBusiness.slug}.csv`,
                 sorted.map((r) => ({
                   reviewer: r.reviewerName,
                   rating: r.rating,
@@ -244,29 +415,23 @@ export default function DashboardReviewsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 @5xl/main:grid-cols-4">
         <StatCard
           label="Total Reviews"
-          value={selectedBusiness.totalReviews.toLocaleString("id-ID")}
-          delta="+12% dari bulan lalu"
+          value={activeBusiness.totalReviews.toLocaleString("id-ID")}
           icon={MessageSquareTextIcon}
         />
         <StatCard
           label="Average Rating"
-          value={selectedBusiness.averageRating.toFixed(1)}
-          delta="+0.2 dari bulan lalu"
+          value={activeBusiness.averageRating.toFixed(1)}
           icon={StarIcon}
         />
         <StatCard
           label="Belum Dibalas"
           value={unrepliedCount}
-          delta={`+${unrepliedCount} dari bulan lalu`}
-          deltaTone="negative"
           icon={MessageSquareTextIcon}
           onClick={() => setTab("unreplied")}
         />
         <StatCard
           label="Dilaporkan"
           value={reportedCount}
-          delta={`+${reportedCount} dari bulan lalu`}
-          deltaTone="negative"
           iconTone="destructive"
           icon={FlagIcon}
           onClick={() => setTab("reported")}
@@ -279,7 +444,7 @@ export default function DashboardReviewsPage() {
             <TabsTrigger key={option.value} value={option.value}>
               {option.label}{" "}
               {option.value === "all"
-                ? `(${reviews.length})`
+                ? `(${activeBusiness.totalReviews.toLocaleString("id-ID")})`
                 : option.value === "unreplied"
                   ? `(${unrepliedCount})`
                   : `(${reportedCount})`}
@@ -322,6 +487,8 @@ export default function DashboardReviewsPage() {
             columns={columns}
             getRowId={(r) => r.id}
             onRowClick={(review) => setSelectedId(review.id)}
+            isLoading={isLoading}
+            error={loadError}
             rowClassName={(review) =>
               selectedReview?.id === review.id ? "bg-accent/40 hover:bg-accent/50" : undefined
             }
@@ -331,7 +498,11 @@ export default function DashboardReviewsPage() {
           />
         </div>
         {selectedReview && (
-          <ReviewDetailPanel review={selectedReview} onClose={() => setSelectedId(null)} />
+          <ReviewDetailPanel
+            review={selectedReview}
+            onClose={() => setSelectedId(null)}
+            onReply={(content) => handleReply(selectedReview.id, content)}
+          />
         )}
       </div>
 
