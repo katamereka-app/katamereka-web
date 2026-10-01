@@ -851,7 +851,7 @@ export async function rejectBusinessClaim(
 /**
  * UI Adapter to convert ApiBusinessListItem to UI Business Model
  */
-export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
+export function mapApiBusinessToUiModel(item: ApiBusinessListItem | ApiBusinessDetail | any): Business {
   const rawRating = (item as any).averageRating ?? (item as any).average_rating ?? null;
   const rawCount = (item as any).reviewCount ?? (item as any).review_count ?? null;
 
@@ -873,9 +873,10 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem): Business {
     parsedRating = 0;
   }
 
-  const initials = item.name
+  const nameStr = (item as any)?.name || "KM";
+  const initials = String(nameStr)
     .split(" ")
-    .map((w) => w[0])
+    .map((w: string) => w[0] || "")
     .join("")
     .substring(0, 2)
     .toUpperCase();
