@@ -82,6 +82,7 @@ export default function BusinessProfilePage() {
   const [notFoundState, setNotFoundState] = useState(false);
   const [activeTab, setActiveTab] = useState<"profil" | "review" | "foto" | "info">("profil");
   const [isSaved, setIsSaved] = useState(false);
+  const [savingFavorite, setSavingFavorite] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [claimStatus, setClaimStatus] = useState<BusinessClaimStatus | null>(null);
