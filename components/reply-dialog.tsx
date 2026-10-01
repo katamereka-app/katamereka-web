@@ -23,15 +23,19 @@ export function ReplyDialog({
   triggerVariant = "default",
   triggerSize = "sm",
   onReplied,
+  onSubmit,
 }: {
   review: Review
   triggerLabel?: string
   triggerVariant?: VariantProps<typeof buttonVariants>["variant"]
   triggerSize?: VariantProps<typeof buttonVariants>["size"]
   onReplied?: () => void
+  /** When provided, replaces the default mock toast with a real API call. Return false to keep the dialog open (e.g. on error). */
+  onSubmit?: (content: string) => Promise<boolean>
 }) {
   const [open, setOpen] = React.useState(false)
   const [reply, setReply] = React.useState("")
+  const [submitting, setSubmitting] = React.useState(false)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -57,15 +61,27 @@ export function ReplyDialog({
             Batal
           </Button>
           <Button
-            disabled={reply.trim().length === 0}
-            onClick={() => {
-              toast.success("Balasan berhasil dikirim.")
-              setReply("")
-              setOpen(false)
-              onReplied?.()
+            disabled={reply.trim().length === 0 || submitting}
+            onClick={async () => {
+              if (!onSubmit) {
+                toast.success("Balasan berhasil dikirim.")
+                setReply("")
+                setOpen(false)
+                onReplied?.()
+                return
+              }
+
+              setSubmitting(true)
+              const ok = await onSubmit(reply.trim())
+              setSubmitting(false)
+              if (ok) {
+                setReply("")
+                setOpen(false)
+                onReplied?.()
+              }
             }}
           >
-            Kirim Balasan
+            {submitting ? "Mengirim..." : "Kirim Balasan"}
           </Button>
         </DialogFooter>
       </DialogContent>
