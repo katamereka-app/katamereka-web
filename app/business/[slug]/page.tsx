@@ -395,6 +395,18 @@ export default function BusinessProfilePage() {
     return "-";
   })();
 
+  const fullAddress = (() => {
+    const parts: string[] = [];
+    if (addressStr && addressStr !== "-") parts.push(addressStr);
+    if (cityStr && cityStr !== "-" && !addressStr.toLowerCase().includes(cityStr.toLowerCase())) {
+      parts.push(cityStr);
+    }
+    if (provinceStr && provinceStr !== "-" && !addressStr.toLowerCase().includes(provinceStr.toLowerCase())) {
+      parts.push(provinceStr);
+    }
+    return parts.length > 0 ? parts.join(", ") : "-";
+  })();
+
   const displayLocation = locationStr !== "-" ? locationStr : addressStr;
 
   // Logo & cover: prefer camelCase (real API) > snake_case (legacy)
@@ -824,17 +836,17 @@ export default function BusinessProfilePage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-3 text-slate-700 min-w-0">
                     <MapPin className="w-4 h-4 text-[#008767] flex-shrink-0 mt-0.5" />
-                    {addressStr !== "-" ? (
+                    {fullAddress !== "-" ? (
                       <a
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          `${apiDetail?.name ? `${apiDetail.name}, ` : ""}${addressStr}`
+                          `${apiDetail?.name ? `${apiDetail.name}, ` : ""}${fullAddress}`
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="leading-snug font-medium text-slate-800 hover:text-[#008767] hover:underline"
                         title="Buka lokasi di Google Maps"
                       >
-                        {addressStr}
+                        {fullAddress}
                       </a>
                     ) : (
                       <span className="text-slate-400 font-medium">-</span>

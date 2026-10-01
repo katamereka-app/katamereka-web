@@ -316,10 +316,6 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 font-medium">@{user.username}</p>
-                    {/* TEMP DEBUG — remove once businessRole mismatch is confirmed fixed */}
-                    <p className="text-[9px] text-red-500 font-mono">
-                      debug: platformRole={String(user.platformRole)} businessRole={String(user.businessRole)}
-                    </p>
                   </div>
 
                   <div className="py-1 text-xs font-semibold text-slate-700">
