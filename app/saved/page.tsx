@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import Navbar from "@/components/navbar";
+import { toast } from "sonner";
+import {
+  fetchMyFavorites,
+  unfavoriteBusiness,
+  FavoriteItem,
+  formatStarRating,
+  formatRelativeDate,
+} from "@/lib/api-profile";
+import { categoryDisplayName } from "@/lib/slug";
 import {
   Search,
   Heart,
@@ -14,73 +23,108 @@ import {
   ArrowRight,
   CheckCircle2,
   Building2,
-  Package,
-  MapPin as MapPinIcon,
-  Wrench,
-  Smartphone,
-  GraduationCap,
-  Hotel,
-  Plane,
-  ShoppingBag,
-  Store,
   MessageSquare,
   ArrowUp,
   X,
+  Loader2,
+  Lock,
 } from "lucide-react";
 
 const CATEGORY_TABS = [
   { key: "semua", label: "Semua" },
-  { key: "bisnis", label: "Bisnis" },
-  { key: "produk", label: "Produk" },
-  { key: "tempat", label: "Tempat" },
-  { key: "jasa", label: "Jasa" },
-  { key: "aplikasi", label: "Aplikasi" },
-  { key: "institusi", label: "Institusi" },
+  { key: "hotel", label: "Hotel & Akomodasi" },
+  { key: "restoran", label: "Kuliner & Restoran" },
+  { key: "jasa", label: "Jasa & Layanan" },
+  { key: "commercial", label: "Pusat Perbelanjaan" },
+  { key: "lainnya", label: "Lainnya" },
 ] as const;
 
-type CategoryKey = (typeof CATEGORY_TABS)[number]["key"];
-
-const SAVED_ITEMS: Array<{
-  id: number;
-  name: string;
-  slug: string;
-  category: string;
-  categoryLabel: string;
-  categoryType: string;
-  rating: number;
-  reviews: string;
-  location: string;
-  verified: boolean;
-  initial: string;
-  bgColor: string;
-  coverBg: string;
-  coverIcon: any;
-  coverColor: string;
-}> = [];
-
 export default function SavedPage() {
-  const { user } = useAuth();
-  const [activeCategory, setActiveCategory] = useState<CategoryKey>("semua");
+  const { user, isLoggedIn } = useAuth();
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>("semua");
   const [searchQuery, setSearchQuery] = useState("");
-  const [savedIds, setSavedIds] = useState<number[]>([]);
+  const [unfavoritingId, setUnfavoritingId] = useState<string | null>(null);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
-  const toggleSave = (id: number) => {
-    setSavedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+  useEffect(() => {
+    async function loadFavorites() {
+      if (!isLoggedIn) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await fetchMyFavorites();
+        if (res?.success && Array.isArray(res.data)) {
+          setFavorites(res.data);
+        } else {
+          setFavorites([]);
+        }
+      } catch (err) {
+        console.error("Failed loading favorites:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadFavorites();
+  }, [isLoggedIn]);
+
+  const handleUnfavorite = async (businessId: string, favoriteId: string) => {
+    setUnfavoritingId(favoriteId);
+    try {
+      const res = await unfavoriteBusiness(businessId);
+      if (res?.success) {
+        setFavorites((prev) => prev.filter((f) => f.favoriteId !== favoriteId));
+        toast.success("Bisnis berhasil dihapus dari daftar favorit");
+      } else {
+        toast.error(res?.message || "Gagal menghapus bisnis dari favorit");
+      }
+    } catch {
+      toast.error("Terjadi kesalahan saat menghapus favorit");
+    } finally {
+      setUnfavoritingId(null);
+    }
   };
 
-  const filtered = SAVED_ITEMS.filter((item) => {
-    const savedOnly = savedIds.includes(item.id);
-    const matchCat =
-      activeCategory === "semua" || item.categoryType === activeCategory;
+  const filtered = favorites.filter((item) => {
+    const biz = item.business;
+    if (!biz) return false;
+
+    // Filter category
+    let matchCat = true;
+    const catLower = (biz.category || "").toLowerCase();
+    if (activeCategory === "hotel") {
+      matchCat = catLower.includes("hotel") || catLower.includes("accommodation") || catLower.includes("apartment");
+    } else if (activeCategory === "restoran") {
+      matchCat = catLower.includes("restaurant") || catLower.includes("cafe") || catLower.includes("catering") || catLower.includes("food");
+    } else if (activeCategory === "jasa") {
+      matchCat = catLower.includes("service") || catLower.includes("repair") || catLower.includes("rental");
+    } else if (activeCategory === "commercial") {
+      matchCat = catLower.includes("commercial") || catLower.includes("shopping") || catLower.includes("supermarket") || catLower.includes("mall");
+    } else if (activeCategory === "lainnya") {
+      matchCat =
+        !catLower.includes("hotel") &&
+        !catLower.includes("accommodation") &&
+        !catLower.includes("restaurant") &&
+        !catLower.includes("cafe") &&
+        !catLower.includes("service") &&
+        !catLower.includes("commercial");
+    }
+
+    // Filter search query
+    const query = searchQuery.toLowerCase().trim();
+    const catLabel = categoryDisplayName(biz.category).toLowerCase();
     const matchSearch =
-      !searchQuery ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.categoryLabel.toLowerCase().includes(searchQuery.toLowerCase());
-    return savedOnly && matchCat && matchSearch;
+      !query ||
+      biz.name.toLowerCase().includes(query) ||
+      catLabel.includes(query) ||
+      (biz.city && biz.city.toLowerCase().includes(query)) ||
+      (biz.address && biz.address.toLowerCase().includes(query));
+
+    return matchCat && matchSearch;
   });
 
   return (
@@ -93,28 +137,28 @@ export default function SavedPage() {
         <nav className="flex items-center gap-2 text-xs text-slate-400">
           <Link href="/" className="hover:text-[#008767] transition-colors">Beranda</Link>
           <span>/</span>
-          <span className="text-slate-700 font-medium">Tersimpan</span>
+          <span className="text-slate-700 font-medium">Favorit</span>
         </nav>
 
         {/* ── Page Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Tersimpan</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Favorit</h1>
             <p className="text-sm text-slate-500">
-              Simpan bisnis yang ingin kamu kunjungi atau lihat kembali nanti.
+              Daftar bisnis favorit kamu agar mudah ditemukan kembali.
             </p>
           </div>
 
-          {/* Search + Filter */}
+          {/* Search */}
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Cari bisnis tersimpan..."
+                placeholder="Cari bisnis favorit..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#008767] focus:ring-2 focus:ring-[#008767]/15 transition-all w-56"
+                className="pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:border-[#008767] focus:ring-2 focus:ring-[#008767]/15 transition-all w-60"
               />
               {searchQuery && (
                 <button
@@ -125,10 +169,6 @@ export default function SavedPage() {
                 </button>
               )}
             </div>
-            <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:border-[#008767]/40 hover:text-[#008767] transition-all">
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="hidden sm:inline">Filter</span>
-            </button>
           </div>
         </div>
 
@@ -150,93 +190,159 @@ export default function SavedPage() {
         </div>
 
         {/* ── Count ── */}
-        {filtered.length > 0 && (
+        {!loading && isLoggedIn && filtered.length > 0 && (
           <p className="text-sm font-medium text-slate-600">
-            {filtered.length} bisnis tersimpan
+            {filtered.length} bisnis favorit
           </p>
         )}
 
-        {/* ── Grid ── */}
-        {filtered.length > 0 ? (
+        {/* ── Loading Skeleton ── */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 animate-pulse"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-4 bg-slate-100 rounded w-3/4" />
+                    <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-28 bg-slate-100 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : !isLoggedIn ? (
+          /* ── Not Logged In State ── */
+          <div className="py-20 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
+            <div className="max-w-sm mx-auto text-center space-y-4 px-4">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                <Lock className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-bold text-slate-900 text-lg">Silakan Login Terlebih Dahulu</h3>
+                <p className="text-sm text-slate-500">
+                  Kamu perlu login untuk melihat dan mengelola daftar bisnis favorit.
+                </p>
+              </div>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#008767] hover:bg-[#007458] text-white text-sm font-semibold transition-all shadow-md shadow-[#008767]/20 active:scale-95"
+              >
+                <span>Login Sekarang</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        ) : filtered.length > 0 ? (
+          /* ── Grid ── */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((item) => {
-              const CoverIcon = item.coverIcon;
-              const isSaved = savedIds.includes(item.id);
+              const biz = item.business;
+              if (!biz) return null;
+              const ratingVal = formatStarRating(biz.averageRating || biz.externalRating);
+              const reviewCount = biz.reviewCount || biz.externalReviewsCount || 0;
+              const categoryLabel = categoryDisplayName(biz.category);
+              const locationStr = [biz.city, biz.province].filter(Boolean).join(", ") || biz.address || "Indonesia";
+              const isUnfavoriting = unfavoritingId === item.favoriteId;
+
               return (
                 <div
-                  key={item.id}
-                  className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-lg hover:shadow-slate-200/60 hover:border-[#008767]/20 transition-all flex flex-col"
+                  key={item.favoriteId}
+                  className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:shadow-lg hover:shadow-slate-200/60 hover:border-[#008767]/20 transition-all flex flex-col justify-between"
                 >
-                  {/* Card Top: Info Row */}
-                  <div className="p-4 flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      {/* Logo */}
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border font-bold text-sm shrink-0 ${item.bgColor}`}>
-                        {item.initial || <Smartphone className="w-5 h-5" />}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="font-bold text-slate-900 text-sm group-hover:text-[#008767] transition-colors line-clamp-1">
-                            {item.name}
+                  <div>
+                    {/* Card Header: Info & Unfavorite */}
+                    <div className="p-4 flex items-start justify-between gap-3 border-b border-slate-100">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Logo / Avatar */}
+                        {biz.logoUrl ? (
+                          <img
+                            src={biz.logoUrl}
+                            alt={biz.name}
+                            className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 text-[#008767] flex items-center justify-center font-bold text-base shrink-0">
+                            {biz.name ? biz.name.charAt(0).toUpperCase() : <Building2 className="w-5 h-5" />}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-slate-900 text-sm group-hover:text-[#008767] transition-colors truncate">
+                            {biz.name}
                           </h3>
-                          {item.verified && (
-                            <CheckCircle2 className="w-3.5 h-3.5 text-[#008767] shrink-0" />
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-400 mt-0.5">{item.categoryLabel}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <div className="flex text-amber-400 text-xs">{"★".repeat(5)}</div>
-                          <span className="text-xs font-semibold text-amber-500">{item.rating}</span>
-                          <span className="text-xs text-slate-400">· {item.reviews}</span>
-                        </div>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-slate-400">
-                          <MapPin className="w-3 h-3" />
-                          <span>{item.location}</span>
+                          <p className="text-xs text-slate-500 mt-0.5 truncate">{categoryLabel}</p>
+                          <div className="flex items-center gap-1.5 mt-1 text-xs">
+                            <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                            <span className="font-semibold text-amber-600">{ratingVal > 0 ? ratingVal.toFixed(1) : "Baru"}</span>
+                            <span className="text-slate-400">({reviewCount} ulasan)</span>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Unfavorite Button */}
+                      <button
+                        onClick={() => handleUnfavorite(biz.id, item.favoriteId)}
+                        disabled={isUnfavoriting}
+                        title="Hapus dari daftar favorit"
+                        className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all border bg-[#e8f6f2] border-[#008767]/30 text-[#008767] hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 disabled:opacity-50"
+                      >
+                        {isUnfavoriting ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-[#008767]" />
+                        ) : (
+                          <Heart className="w-4 h-4 fill-[#008767] hover:fill-rose-500" />
+                        )}
+                      </button>
                     </div>
 
-                    {/* Save Toggle */}
-                    <button
-                      onClick={() => toggleSave(item.id)}
-                      className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all border ${
-                        isSaved
-                          ? "bg-[#e8f6f2] border-[#008767]/20 text-[#008767]"
-                          : "bg-slate-50 border-slate-200 text-slate-400 hover:border-rose-200 hover:text-rose-400"
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 ${isSaved ? "fill-[#008767]" : ""}`} />
-                    </button>
+                    {/* Content Section */}
+                    <div className="p-4 space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{locationStr}</span>
+                      </div>
+                      {item.favoritedAt && (
+                        <p className="text-[11px] text-slate-400 pt-1">
+                          Difavoritkan {formatRelativeDate(item.favoritedAt)}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Cover Placeholder */}
-                  <Link href={`/business/${item.slug}`} className="block mx-4 mb-4">
-                    <div className={`h-32 rounded-xl bg-gradient-to-br ${item.coverBg} border border-slate-100 flex items-center justify-center relative overflow-hidden group-hover:border-[#008767]/20 transition-colors`}>
-                      <CoverIcon className={`w-16 h-16 ${item.coverColor} opacity-60`} />
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-[#008767]/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-                        <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold text-[#008767] flex items-center gap-1.5 shadow-sm translate-y-2 group-hover:translate-y-0 transition-transform">
-                          <span>Lihat Profil</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+                  {/* Card Bottom Link */}
+                  <div className="px-4 pb-4 pt-2 border-t border-slate-50">
+                    <Link
+                      href={`/business/${biz.slug}`}
+                      className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-[#e8f6f2] text-xs font-semibold text-slate-700 hover:text-[#008767] transition-all flex items-center justify-center gap-1.5 group/btn"
+                    >
+                      <span>Lihat Detail Bisnis</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-0.5 transition-transform" />
+                    </Link>
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
           /* ── Empty State ── */
-          <div className="py-20">
-            <div className="max-w-sm mx-auto text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#e8f6f2] border border-[#bce4d7] flex items-center justify-center mx-auto">
-                <Bookmark className="w-8 h-8 text-[#008767]" />
+          <div className="py-20 bg-white rounded-3xl border border-slate-200/80 shadow-xs">
+            <div className="max-w-sm mx-auto text-center space-y-4 px-4">
+              <div className="w-16 h-16 rounded-2xl bg-[#e8f6f2] border border-[#bce4d7] flex items-center justify-center mx-auto text-[#008767]">
+                <Bookmark className="w-8 h-8" />
               </div>
               <div className="space-y-1">
-                <h3 className="font-bold text-slate-900">Belum ada bisnis tersimpan</h3>
+                <h3 className="font-bold text-slate-900 text-lg">
+                  {searchQuery || activeCategory !== "semua"
+                    ? "Tidak ada bisnis yang cocok"
+                    : "Belum ada bisnis favorit"}
+                </h3>
                 <p className="text-sm text-slate-500">
-                  Simpan bisnis favoritmu agar mudah ditemukan kembali.
+                  {searchQuery || activeCategory !== "semua"
+                    ? "Coba ubah kata kunci pencarian atau filter kategori."
+                    : "Tambahkan bisnis ke favorit agar mudah ditemukan kembali."}
                 </p>
               </div>
               <Link
@@ -267,14 +373,13 @@ export default function SavedPage() {
               <p className="text-xs sm:text-sm text-slate-500 max-w-sm leading-relaxed">
                 Platform ulasan dan rekomendasi bisnis dari orang-orang seperti kamu.
               </p>
-
             </div>
             <div className="lg:col-span-3 space-y-3">
               <h4 className="font-bold text-slate-900 text-sm">Tautan Cepat</h4>
               <ul className="space-y-2 text-xs sm:text-sm text-slate-500">
                 <li><Link href="/" className="hover:text-[#008767] transition-colors">Beranda</Link></li>
                 <li><Link href="/businesses" className="hover:text-[#008767] transition-colors">Jelajahi</Link></li>
-                <li><Link href="/saved" className="hover:text-[#008767] transition-colors font-medium text-[#008767]">Tersimpan</Link></li>
+                <li><Link href="/saved" className="hover:text-[#008767] transition-colors font-medium text-[#008767]">Favorit</Link></li>
                 <li><Link href="/profile" className="hover:text-[#008767] transition-colors">Profil Saya</Link></li>
               </ul>
             </div>
@@ -304,3 +409,4 @@ export default function SavedPage() {
     </div>
   );
 }
+

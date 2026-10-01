@@ -13,7 +13,15 @@ import {
   BusinessClaimStatus,
   VerificationMethod,
 } from "@/lib/api-client";
-import { formatRelativeDate, formatStarRating, deleteReview } from "@/lib/api-profile";
+import {
+  formatRelativeDate,
+  formatStarRating,
+  deleteReview,
+  fetchMyFavorites,
+  toggleFavorite,
+  unfavoriteBusiness,
+  recordBusinessView,
+} from "@/lib/api-profile";
 import {
   Dialog,
   DialogContent,
@@ -73,6 +81,7 @@ export default function BusinessProfilePage() {
   const [notFoundState, setNotFoundState] = useState(false);
   const [activeTab, setActiveTab] = useState<"profil" | "review" | "foto" | "info">("profil");
   const [isSaved, setIsSaved] = useState(false);
+  const [savingFavorite, setSavingFavorite] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [claimStatus, setClaimStatus] = useState<BusinessClaimStatus | null>(null);
   const [claimStatusLoading, setClaimStatusLoading] = useState(false);
@@ -112,6 +121,9 @@ export default function BusinessProfilePage() {
         // rendering a different business's data under this URL.
         if (res && res.data && res.data.slug === slug) {
           setApiDetail(res.data);
+          if (res.data.id) {
+            recordBusinessView(res.data.id);
+          }
         } else {
           setApiDetail(null);
           setNotFoundState(true);
@@ -140,6 +152,57 @@ export default function BusinessProfilePage() {
     }
     loadClaimStatus();
   }, [isLoggedIn, apiDetail?.id]);
+
+  // ── Sync Favorite Status ──────────────────────────────────────────────────
+  useEffect(() => {
+    async function checkFavoriteStatus() {
+      if (!isLoggedIn || !apiDetail?.id) return;
+      try {
+        const res = await fetchMyFavorites();
+        if (res?.success && Array.isArray(res.data)) {
+          const found = res.data.some((fav) => fav.business?.id === apiDetail.id);
+          setIsSaved(found);
+        }
+      } catch (err) {
+        console.warn("Failed checking favorite status:", err);
+      }
+    }
+    checkFavoriteStatus();
+  }, [isLoggedIn, apiDetail?.id]);
+
+  // ── Toggle Favorite Handler ───────────────────────────────────────────────
+  async function handleToggleSave() {
+    if (!isLoggedIn) {
+      toast.error("Silakan login terlebih dahulu untuk menyimpan bisnis");
+      return;
+    }
+    if (!apiDetail?.id || savingFavorite) return;
+
+    setSavingFavorite(true);
+    try {
+      if (isSaved) {
+        const res = await unfavoriteBusiness(apiDetail.id);
+        if (res?.success) {
+          setIsSaved(false);
+          toast.success("Bisnis berhasil dihapus dari daftar favorit");
+        } else {
+          toast.error(res?.message || "Gagal menghapus favorit");
+        }
+      } else {
+        const res = await toggleFavorite(apiDetail.id);
+        if (res?.success) {
+          setIsSaved(true);
+          toast.success("Bisnis berhasil ditambahkan ke daftar favorit");
+        } else {
+          toast.error(res?.message || "Gagal menyimpan favorit");
+        }
+      }
+    } catch {
+      toast.error("Terjadi kesalahan saat memproses favorit");
+    } finally {
+      setSavingFavorite(false);
+    }
+  }
 
   // ── Fetch Reviews ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -459,15 +522,16 @@ export default function BusinessProfilePage() {
                 </Link>
 
                 <button
-                  onClick={() => setIsSaved(!isSaved)}
-                  className={`px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all border ${
+                  onClick={handleToggleSave}
+                  disabled={savingFavorite}
+                  className={`px-4 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all border disabled:opacity-60 ${
                     isSaved
                       ? "bg-[#e8f6f2] text-[#008767] border-[#008767]/30"
                       : "bg-white text-slate-700 border-slate-200 hover:border-[#008767]/40 hover:text-[#008767]"
                   }`}
                 >
                   <Bookmark className={`w-4 h-4 ${isSaved ? "fill-[#008767]" : ""}`} />
-                  <span>{isSaved ? "Tersimpan" : "Simpan"}</span>
+                  <span>Favorit</span>
                 </button>
 
                 <button

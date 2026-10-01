@@ -246,7 +246,7 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-base font-extrabold text-slate-900">{savedCount}</p>
-                  <p className="text-[10px] text-slate-400 font-medium">Tersimpan</p>
+                  <p className="text-[10px] text-slate-400 font-medium">Favorit</p>
                 </div>
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function ProfilePage() {
               })}
               <Link href="/saved" className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-xs font-semibold transition-all text-slate-600 hover:bg-slate-50 hover:text-[#008767]">
                 <Bookmark className="w-4 h-4 text-slate-400" />
-                <span>Bisnis Tersimpan</span>
+                <span>Bisnis Favorit</span>
               </Link>
             </div>
           </aside>
@@ -348,7 +348,7 @@ export default function ProfilePage() {
                           <Bookmark className="w-4 h-4" />
                         </div>
                         <p className="text-xl font-extrabold text-slate-900 pt-1">{savedCount}</p>
-                        <p className="text-xs font-bold text-slate-700">Bisnis Tersimpan</p>
+                        <p className="text-xs font-bold text-slate-700">Bisnis Favorit</p>
                       </div>
                     </div>
                   </div>
@@ -364,7 +364,7 @@ export default function ProfilePage() {
                       {[
                         { emoji: "🏅", title: "Reviewer Aktif", desc: reviewCount > 0 ? `${reviewCount} ulasan ditulis` : "Belum menulis review" },
                         { emoji: "⭐", title: "Helper", desc: helpfulCount > 0 ? `${helpfulCount} pengguna terbantu` : "Belum ada helpful vote" },
-                        { emoji: "🔖", title: "Kolektor", desc: savedCount > 0 ? `${savedCount} bisnis tersimpan` : "Belum menyimpan bisnis" },
+                        { emoji: "🔖", title: "Kolektor", desc: savedCount > 0 ? `${savedCount} bisnis favorit` : "Belum ada favorit" },
                       ].map((badge) => (
                         <div key={badge.title} className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-sm flex-shrink-0">{badge.emoji}</div>
@@ -385,7 +385,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-4 text-sm font-semibold overflow-x-auto">
                       {[
                         { id: "reviews", label: "Review Saya", icon: Star },
-                        { id: "saved", label: "Tersimpan", icon: Bookmark },
+                        { id: "saved", label: "Favorit", icon: Bookmark },
                         { id: "history", label: "Riwayat", icon: Eye },
                         { id: "activity", label: "Aktivitas", icon: Activity },
                       ].map((tab) => {
@@ -524,7 +524,7 @@ export default function ProfilePage() {
                         })}
                       </div>
                     ) : (
-                      <EmptyState icon={Heart} title="Belum ada bisnis tersimpan" desc="Simpan bisnis favorit Anda untuk ditemukan dengan mudah." cta="/businesses" ctaLabel="Jelajahi Bisnis" />
+                      <EmptyState icon={Heart} title="Belum ada bisnis favorit" desc="Tambahkan bisnis ke favorit Anda untuk ditemukan dengan mudah." cta="/businesses" ctaLabel="Jelajahi Bisnis" />
                     )
                   )}
 
