@@ -889,13 +889,82 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem | ApiBusinessD
     formattedCategory = rawCat.replace(/^(service|building)\./, "").replace(/_/g, " ");
   }
 
+  // Address & Location Dynamic Construction (Street, Suburb, City, Province, Postcode)
+  const cleanVal = (val?: any) => {
+    if (val === null || val === undefined || val === "-" || val === "null" || val === "undefined") {
+      return "";
+    }
+    const str = String(val).trim();
+    if (str === "" || str === "-" || str === "null" || str === "undefined") return "";
+    return str;
+  };
+
+  const rawAddr = cleanVal((item as any).address);
+  const cityStr = cleanVal((item as any).city);
+  const provStr = cleanVal((item as any).province);
+  const postCode = cleanVal((item as any).postalCode ?? (item as any).postal_code);
+  const countryStr = cleanVal((item as any).country);
+  const meta = (item as any).externalMetadata || (item as any).external_metadata || {};
+
+  const bizNameLower = (item.name || "").trim().toLowerCase();
+
+  let streetPart = "";
+  let suburbPart = cleanVal(meta.suburb || meta.village || meta.city_block || meta.district);
+
+  // Extract street name or fallback
+  const metaStreet = cleanVal(meta.street);
+  const metaHouse = cleanVal(meta.housenumber);
+  const metaAddr2 = cleanVal(meta.address_line2);
+  const metaFormatted = cleanVal(meta.formatted);
+
+  if (metaStreet) {
+    streetPart = metaStreet;
+    if (metaHouse) streetPart = `${metaStreet} No. ${metaHouse}`;
+  } else if (metaAddr2) {
+    streetPart = metaAddr2;
+  } else if (rawAddr && rawAddr.toLowerCase() !== bizNameLower) {
+    streetPart = rawAddr;
+  } else if (metaFormatted) {
+    streetPart = metaFormatted;
+  }
+
+  // Strip leading business name if present in streetPart
+  if (bizNameLower && streetPart.toLowerCase().startsWith(bizNameLower)) {
+    streetPart = streetPart.substring(bizNameLower.length).replace(/^[\s,:-]+/, "").trim();
+  }
+
+  let addrParts: string[] = [];
+  if (streetPart) addrParts.push(streetPart);
+  if (suburbPart && !streetPart.toLowerCase().includes(suburbPart.toLowerCase())) {
+    addrParts.push(suburbPart);
+  }
+
+  const effectiveCity = cityStr || cleanVal(meta.city);
+  if (effectiveCity && !addrParts.some(p => p.toLowerCase().includes(effectiveCity.toLowerCase()))) {
+    addrParts.push(effectiveCity);
+  }
+
+  const effectiveState = provStr || cleanVal(meta.state);
+  if (effectiveState && !addrParts.some(p => p.toLowerCase().includes(effectiveState.toLowerCase()))) {
+    addrParts.push(effectiveState);
+  }
+
+  const effectivePostcode = postCode || cleanVal(String(meta.postcode ?? ""));
+  if (effectivePostcode && !addrParts.some(p => p.includes(effectivePostcode))) {
+    addrParts.push(effectivePostcode);
+  }
+
+  const regionParts = [effectiveCity, effectiveState, effectivePostcode].filter(Boolean);
+  const computedFullAddress = addrParts.length > 0 ? addrParts.join(", ") : (regionParts.length > 0 ? regionParts.join(", ") : "-");
+  const computedLocation = effectiveCity ? `${effectiveCity}${effectiveState ? `, ${effectiveState}` : ""}` : (computedFullAddress || "-");
+
   return {
     id: item.id,
     slug: item.slug,
     name: item.name,
     category: formattedCategory,
-    location: item.city ? `${item.city}${item.province ? `, ${item.province}` : ""}`.trim() : item.address || "-",
-    address: item.address || "-",
+    location: computedLocation,
+    address: computedFullAddress,
     rating: parsedRating > 0 ? Number(parsedRating.toFixed(1)) : 0,
     reviewCount: reviewsCountVal,
     reviewCountFormatted: reviewsCountVal > 0 ? `${reviewsCountVal} ulasan` : "0 ulasan",

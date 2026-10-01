@@ -344,74 +344,58 @@ export default function BusinessProfilePage() {
       ? `${cityStr}${provinceStr !== "-" ? `, ${provinceStr}` : ""}`
       : "-";
 
-  // Address resolution: resolve true street address avoiding repeating place name
+  // Address resolution: resolve true street address (ignoring duplicate business name)
   const addressStr = (() => {
     const bizName = (apiDetail?.name || "").trim().toLowerCase();
     const meta = apiDetail?.externalMetadata || (apiDetail as any)?.external_metadata || {};
 
-    const formatted = cleanValue(meta.formatted);
-    const line2 = cleanValue(meta.address_line2);
-    const line1 = cleanValue(meta.address_line1);
-    const street = cleanValue(meta.street);
-    const housenumber = cleanValue(meta.housenumber);
-    const suburb = cleanValue(meta.suburb || meta.district || meta.neighbourhood);
-    const rawAddr = cleanValue(apiDetail?.address);
-
-    const isValidAddress = (str: string) => {
-      if (!str || str === "-") return false;
-      const lower = str.trim().toLowerCase();
-      if (lower === bizName) return false;
-      return true;
-    };
-
-    const cleanPrefix = (str: string) => {
-      if (!str || str === "-") return "-";
-      if (bizName && str.toLowerCase().startsWith(bizName)) {
-        const stripped = str.substring(bizName.length).replace(/^[\s,:-]+/, "").trim();
-        if (stripped.length > 3) return stripped;
+    const clean = (s?: any) => {
+      if (s === null || s === undefined || s === "-" || s === "null" || s === "undefined") return "";
+      let res = String(s).trim();
+      if (bizName && res.toLowerCase().startsWith(bizName)) {
+        res = res.substring(bizName.length).replace(/^[\s,:-]+/, "").trim();
       }
-      return str;
+      return res;
     };
 
-    // 1. Try formatted address after stripping business name prefix
-    const strippedFormatted = cleanPrefix(formatted);
-    if (isValidAddress(strippedFormatted)) return strippedFormatted;
+    const street = clean(meta.street);
+    const housenumber = clean(meta.housenumber);
+    const line2 = clean(meta.address_line2);
+    const formatted = clean(meta.formatted);
+    const line1 = clean(meta.address_line1);
+    const suburb = clean(meta.suburb || meta.village || meta.city_block || meta.district);
+    const rawAddr = clean(apiDetail?.address);
 
-    // 2. Try address_line2 (Geoapify address_line2 usually contains street & district)
-    const strippedLine2 = cleanPrefix(line2);
-    if (isValidAddress(strippedLine2)) return strippedLine2;
-
-    // 3. Try street + housenumber + suburb
-    if (street !== "-") {
+    if (street) {
       let constructed = street;
-      if (housenumber !== "-") constructed = `${street} No. ${housenumber}`;
-      if (suburb !== "-") constructed = `${constructed}, ${suburb}`;
-      if (cityStr !== "-") constructed = `${constructed}, ${cityStr}`;
-      if (isValidAddress(constructed)) return constructed;
+      if (housenumber) constructed = `${street} No. ${housenumber}`;
+      if (suburb && !street.toLowerCase().includes(suburb.toLowerCase())) {
+        constructed = `${constructed}, ${suburb}`;
+      }
+      return constructed;
     }
 
-    // 4. Try rawAddress after stripping business name prefix
-    const strippedRaw = cleanPrefix(rawAddr);
-    if (isValidAddress(strippedRaw)) return strippedRaw;
-
-    // 5. Try address_line1 after stripping business name prefix
-    const strippedLine1 = cleanPrefix(line1);
-    if (isValidAddress(strippedLine1)) return strippedLine1;
-
-    // 6. Fallback to locationStr (City, Province)
-    if (locationStr !== "-") return locationStr;
+    if (line2) return line2;
+    if (formatted) return formatted;
+    if (line1) return line1;
+    if (rawAddr) return rawAddr;
 
     return "-";
   })();
 
+  const postalCodeStr = cleanValue(apiDetail?.postalCode ?? (apiDetail as any)?.postal_code);
+
   const fullAddress = (() => {
     const parts: string[] = [];
     if (addressStr && addressStr !== "-") parts.push(addressStr);
-    if (cityStr && cityStr !== "-" && !addressStr.toLowerCase().includes(cityStr.toLowerCase())) {
+    if (cityStr && cityStr !== "-" && !parts.some((p) => p.toLowerCase().includes(cityStr.toLowerCase()))) {
       parts.push(cityStr);
     }
-    if (provinceStr && provinceStr !== "-" && !addressStr.toLowerCase().includes(provinceStr.toLowerCase())) {
+    if (provinceStr && provinceStr !== "-" && !parts.some((p) => p.toLowerCase().includes(provinceStr.toLowerCase()))) {
       parts.push(provinceStr);
+    }
+    if (postalCodeStr && postalCodeStr !== "-" && !parts.some((p) => p.toLowerCase().includes(postalCodeStr.toLowerCase()))) {
+      parts.push(postalCodeStr);
     }
     return parts.length > 0 ? parts.join(", ") : "-";
   })();
@@ -537,7 +521,7 @@ export default function BusinessProfilePage() {
 
                     {/* Category & Location */}
                     <span className="text-slate-500 font-medium">
-                      📍 {formattedCategory} • {locationStr}
+                      📍 {formattedCategory} • {fullAddress !== "-" ? fullAddress : locationStr}
                     </span>
                   </div>
                 </div>
