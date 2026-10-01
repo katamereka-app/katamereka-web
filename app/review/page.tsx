@@ -147,16 +147,7 @@ function WriteReviewContent() {
     router.replace(`/review?business=${newSlug}`);
   };
 
-  const handleAddSamplePhoto = () => {
-    const samplePhotos = [
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=300&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?w=300&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&auto=format&fit=crop&q=80"
-    ];
-    if (photos.length < 4) {
-      setPhotos([...photos, samplePhotos[photos.length % samplePhotos.length]]);
-    }
-  };
+  const handleAddSamplePhoto = () => {};
 
   const handleRemovePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index));

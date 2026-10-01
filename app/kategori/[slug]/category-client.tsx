@@ -32,51 +32,6 @@ function formatCategoryUnitLabel(categoryName: string): string {
   return categoryName.toLowerCase();
 }
 
-function getCategoryHeroCover(name: string): string {
-  const lower = name.toLowerCase();
-  if (lower.includes("hotel") || lower.includes("akomodasi") || lower.includes("menginap")) {
-    return "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop&q=80";
-  }
-  if (lower.includes("restoran") || lower.includes("makan") || lower.includes("kuliner")) {
-    return "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&auto=format&fit=crop&q=80";
-  }
-  if (lower.includes("kafe") || lower.includes("ngopi") || lower.includes("coffee")) {
-    return "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800&auto=format&fit=crop&q=80";
-  }
-  if (lower.includes("supermarket") || lower.includes("belanja") || lower.includes("shopping")) {
-    return "https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=800&auto=format&fit=crop&q=80";
-  }
-  if (lower.includes("kecantikan") || lower.includes("perawatan") || lower.includes("spa")) {
-    return "https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80";
-  }
-  return "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800&auto=format&fit=crop&q=80";
-}
-
-function getCardImage(name: string, index: number): string {
-  const lower = name.toLowerCase();
-  if (lower.includes("hotel") || lower.includes("akomodasi")) {
-    const images = [
-      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=600&auto=format&fit=crop&q=80",
-    ];
-    return images[index % images.length];
-  }
-  if (lower.includes("restoran") || lower.includes("makan")) {
-    const images = [
-      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?w=600&auto=format&fit=crop&q=80",
-      "https://images.unsplash.com/photo-1537047902294-62a40c20a6ae?w=600&auto=format&fit=crop&q=80",
-    ];
-    return images[index % images.length];
-  }
-  return "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=600&auto=format&fit=crop&q=80";
-}
-
 export default function CategoryClient({
   categoryName,
   categorySlug,

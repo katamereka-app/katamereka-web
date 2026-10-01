@@ -4,7 +4,7 @@ import { Suspense, useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import Navbar from "@/components/navbar";
-import { fetchBusinesses, mapApiBusinessToUiModel } from "@/lib/api-client";
+import { fetchBusinesses, fetchBusinessPlaceImage, mapApiBusinessToUiModel } from "@/lib/api-client";
 import {
   Search,
   Filter,
@@ -58,6 +58,8 @@ function SearchContent() {
               website: `${ui.slug}.katamereka.id`,
               category: ui.category,
               location: ui.location,
+              latitude: ui.latitude,
+              longitude: ui.longitude,
               rating: typeof ui.rating === "number" ? ui.rating : (parseFloat(String(ui.rating)) || 0),
               reviewCount: ui.reviewCount || 0,
               reviewCountFormatted: ui.reviewCountFormatted || `${ui.reviewCount || 0} ulasan`,
@@ -65,10 +67,30 @@ function SearchContent() {
               initials: ui.initials || ui.name.substring(0, 2).toUpperCase(),
               color: ui.color || "bg-[#008767] text-white",
               type: ui.category.toLowerCase().includes("restoran") || ui.category.toLowerCase().includes("service") ? "Jasa" : "Bisnis",
-              bannerUrl: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=500&auto=format&fit=crop&q=80"
+              bannerUrl: ui.imageUrl || null,
             };
           });
           setApiItems(mapped);
+
+          // Lazy load dynamic place images if missing
+          mapped.forEach((biz) => {
+            if (!biz.bannerUrl && biz.name) {
+              fetchBusinessPlaceImage(
+                biz.name,
+                biz.location || "Indonesia",
+                biz.latitude,
+                biz.longitude
+              )
+                .then((img) => {
+                  if (img) {
+                    setApiItems((prev) =>
+                      prev.map((b) => (b.id === biz.id ? { ...b, bannerUrl: img } : b))
+                    );
+                  }
+                })
+                .catch(() => {});
+            }
+          });
         }
       } catch (err) {
         console.warn("Error fetching live search businesses:", err);
@@ -297,11 +319,17 @@ function SearchContent() {
 
                     {/* Right Part: Banner Image & Actions */}
                     <div className="w-full md:w-56 h-36 rounded-2xl overflow-hidden relative bg-gradient-to-br from-slate-100 to-emerald-50 border border-slate-200/80 shrink-0 group">
-                      <img
-                        src={item.bannerUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      {item.bannerUrl ? (
+                        <img
+                          src={item.bannerUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-100 flex items-center justify-center font-bold text-2xl text-emerald-800/60">
+                          {item.initials}
+                        </div>
+                      )}
 
                       {/* Bookmark Icon Button Top Right */}
                       <button

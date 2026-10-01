@@ -38,6 +38,7 @@ import {
   fetchPopularBusinesses,
   fetchCategoryFacets,
   fetchCityFacets,
+  fetchBusinessPlaceImage,
   mapApiBusinessToUiModel,
   ApiCategoryFacet,
   ApiCityFacet
@@ -144,7 +145,28 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
       try {
         const res = await fetchBusinesses({ limit: 5, sort: "popular" });
         if (res && res.data && res.data.length > 0) {
-          setPopularBusinesses(res.data.map(mapApiBusinessToUiModel));
+          const mapped = res.data.map(mapApiBusinessToUiModel);
+          setPopularBusinesses(mapped);
+
+          // Lazy load dynamic place images if image is not present
+          mapped.forEach((biz) => {
+            if (!biz.imageUrl && biz.name) {
+              fetchBusinessPlaceImage(
+                biz.name,
+                biz.location || "Indonesia",
+                biz.latitude,
+                biz.longitude
+              )
+                .then((img) => {
+                  if (img) {
+                    setPopularBusinesses((prev) =>
+                      prev.map((b) => (b.id === biz.id ? { ...b, imageUrl: img } : b))
+                    );
+                  }
+                })
+                .catch(() => {});
+            }
+          });
         }
       } catch (err) {
         console.warn("Error loading popular businesses:", err);
@@ -289,38 +311,46 @@ export default function LandingPage({ initialCategoryFacets, initialCityFacets }
               <Link
                 key={biz.slug}
                 href={`/business/${biz.slug}`}
-                className="group bg-white rounded-2xl border border-slate-200/80 p-4 hover:border-[#008767]/40 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex flex-col justify-between"
+                className="group bg-white rounded-2xl border border-slate-200/80 overflow-hidden hover:border-[#008767]/40 hover:shadow-xl hover:shadow-slate-200/50 transition-all flex flex-col justify-between"
               >
-                <div className="space-y-3">
-                  {/* Logo Icon & Action Arrow */}
-                  <div className="flex items-center justify-between">
-                    <div className="w-11 h-11 rounded-xl font-bold flex items-center justify-center border text-base bg-emerald-50 text-emerald-800 border-emerald-200">
-                      {biz.initials}
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-slate-50 group-hover:bg-[#008767] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors">
-                      <ArrowRight className="w-4 h-4" />
+                <div>
+                  {/* Image Banner */}
+                  <div className="relative h-28 w-full bg-slate-100 overflow-hidden">
+                    {biz.imageUrl ? (
+                      <img
+                        src={biz.imageUrl}
+                        alt={biz.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-emerald-50 via-teal-50 to-slate-100 flex items-center justify-center">
+                        <span className="font-bold text-lg text-emerald-800">{biz.initials}</span>
+                      </div>
+                    )}
+                    <div className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-xs group-hover:bg-[#008767] group-hover:text-white flex items-center justify-center text-slate-400 transition-colors shadow-2xs">
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </div>
                   </div>
 
                   {/* Info */}
-                  <div>
-                    <h3 className="font-bold text-slate-900 group-hover:text-[#008767] transition-colors line-clamp-1">
+                  <div className="p-4 space-y-2">
+                    <h3 className="font-bold text-slate-900 group-hover:text-[#008767] transition-colors line-clamp-1 text-sm">
                       {biz.name}
                     </h3>
                     {biz.reviewCount > 0 && biz.rating > 0 ? (
-                      <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold mt-1">
+                      <div className="flex items-center gap-1 text-xs text-amber-500 font-semibold">
                         <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                         <span>{biz.rating}</span>
                         <span className="text-slate-400 font-normal">({biz.reviewCountFormatted})</span>
                       </div>
                     ) : null}
-                    <p className="text-xs text-slate-500 mt-1.5 font-medium line-clamp-1">
+                    <p className="text-xs text-slate-500 font-medium line-clamp-1">
                       {biz.category}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100/80 mt-3 flex items-center justify-center gap-1 text-xs font-semibold text-slate-400 group-hover:text-[#008767] transition-colors">
+                <div className="px-4 pb-3 pt-2 border-t border-slate-100/80 flex items-center justify-center gap-1 text-xs font-semibold text-slate-400 group-hover:text-[#008767] transition-colors">
                   <Store className="w-3.5 h-3.5" />
                   <span>Profil Bisnis</span>
                 </div>

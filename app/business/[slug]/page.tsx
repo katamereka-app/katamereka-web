@@ -126,8 +126,14 @@ export default function BusinessProfilePage() {
           if (res.data.id) {
             recordBusinessView(res.data.id);
           }
-          // Fetch dynamic image from /business-places/search if cover is not set
-          const existingCover = res.data.coverUrl || res.data.cover_url;
+          // Prioritize backend cover_url / photos[0] / logo_url
+          const existingCover =
+            res.data.coverUrl ||
+            res.data.cover_url ||
+            (Array.isArray(res.data.photos) && res.data.photos.length > 0 ? res.data.photos[0] : null) ||
+            res.data.logoUrl ||
+            res.data.logo_url;
+
           if (existingCover) {
             setPlaceImageUrl(existingCover);
           } else if (res.data.name) {
@@ -750,39 +756,54 @@ export default function BusinessProfilePage() {
             )}
 
             {/* TAB FOTO */}
-            {activeTab === "foto" && (
-              <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
-                <div>
-                  <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
-                    Galeri Foto {apiDetail?.name || "-"}
-                  </h3>
-                </div>
-                {coverUrl || placeImageUrl ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="aspect-video rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 group relative">
-                      <img
-                        src={coverUrl || placeImageUrl || ""}
-                        alt={apiDetail?.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-xs rounded-lg text-white text-[10px] font-medium">
-                        Foto Lokasi
+            {activeTab === "foto" && (() => {
+              const allPhotos = Array.from(
+                new Set(
+                  [
+                    ...(Array.isArray(apiDetail?.photos) ? apiDetail.photos : []),
+                    coverUrl,
+                    placeImageUrl,
+                    logoUrl,
+                  ].filter((p): p is string => Boolean(p && typeof p === "string" && p.trim() !== ""))
+                )
+              );
+
+              return (
+                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
+                      Galeri Foto {apiDetail?.name || "-"}
+                    </h3>
+                  </div>
+                  {allPhotos.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {allPhotos.map((photo, idx) => (
+                        <div key={idx} className="aspect-video rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 group relative shadow-2xs">
+                          <img
+                            src={photo}
+                            alt={`${apiDetail?.name} foto ${idx + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-xs rounded-lg text-white text-[10px] font-medium">
+                            Foto {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                        <ImageIcon className="w-6 h-6 text-slate-400" />
                       </div>
+                      <h4 className="font-bold text-slate-800 text-sm">Belum ada foto galeri</h4>
+                      <p className="text-xs text-slate-500">
+                        Dokumentasi foto tempat belum tersedia.
+                      </p>
                     </div>
-                  </div>
-                ) : (
-                  <div className="py-12 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
-                      <ImageIcon className="w-6 h-6 text-slate-400" />
-                    </div>
-                    <h4 className="font-bold text-slate-800 text-sm">Belum ada foto galeri</h4>
-                    <p className="text-xs text-slate-500">
-                      Dokumentasi foto tempat belum tersedia.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              );
+            })()}
 
             {/* TAB INFO */}
             {activeTab === "info" && (

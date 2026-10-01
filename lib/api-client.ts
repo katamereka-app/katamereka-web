@@ -42,6 +42,9 @@ export interface ApiBusinessListItem {
   category: string | null;
   logo_url?: string | null;
   cover_url?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  photos?: string[];
   is_claimed?: boolean;
   rating: string | number;
   reviews_count: number;
@@ -150,6 +153,7 @@ export interface ApiBusinessDetail {
   /** legacy snake_case aliases */
   logo_url?: string | null;
   cover_url?: string | null;
+  photos?: string[];
   openingHours?: Record<string, unknown> | null;
   facilities?: ApiFacilities | null;
   catering?: ApiCatering | null;
@@ -323,6 +327,9 @@ export async function fetchBusinesses(
                   if (detailJson.success && detailJson.data) {
                     return {
                       ...item,
+                      cover_url: item.cover_url || item.coverUrl || detailJson.data.cover_url || detailJson.data.coverUrl || null,
+                      logo_url: item.logo_url || item.logoUrl || detailJson.data.logo_url || detailJson.data.logoUrl || null,
+                      photos: (Array.isArray(item.photos) && item.photos.length > 0) ? item.photos : (detailJson.data.photos || []),
                       averageRating: detailJson.data.average_rating ?? detailJson.data.averageRating ?? detailJson.data.rating ?? null,
                       reviewCount: detailJson.data.review_count ?? detailJson.data.reviewCount ?? detailJson.data.reviews_count ?? 0,
                     };
@@ -1041,7 +1048,15 @@ export function mapApiBusinessToUiModel(item: ApiBusinessListItem | ApiBusinessD
   const regionParts = [effectiveCity, effectiveState, effectivePostcode].filter(Boolean);
   const computedFullAddress = addrParts.length > 0 ? addrParts.join(", ") : (regionParts.length > 0 ? regionParts.join(", ") : "-");
   const computedLocation = effectiveCity ? `${effectiveCity}${effectiveState ? `, ${effectiveState}` : ""}` : (computedFullAddress || "-");
-  const coverImg = item.coverUrl || item.cover_url || item.logoUrl || item.logo_url || undefined;
+  
+  // Prioritize cover_url / photos[0] / logo_url directly from backend
+  const coverImg =
+    item.cover_url ||
+    item.coverUrl ||
+    (Array.isArray(item.photos) && item.photos.length > 0 ? item.photos[0] : undefined) ||
+    item.logo_url ||
+    item.logoUrl ||
+    undefined;
 
   const latVal = item.latitude !== undefined && item.latitude !== null ? Number(item.latitude) : (meta.lat ? Number(meta.lat) : undefined);
   const lonVal = item.longitude !== undefined && item.longitude !== null ? Number(item.longitude) : (meta.lon ? Number(meta.lon) : undefined);
