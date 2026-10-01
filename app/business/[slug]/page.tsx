@@ -1122,10 +1122,12 @@ interface ReviewCardProps {
     title: string;
     content: string;
     status?: string;
-    createdAt: string;
+    createdAt?: string;
+    created_at?: string;
     user?: { id?: string; name?: string; initials?: string };
     userId?: string;
     helpfulCount?: number;
+    helpful_count?: number;
   };
   currentUserId?: string;
   onDelete?: (id: string) => void;
@@ -1139,9 +1141,25 @@ function ReviewCard({ review, currentUserId, onDelete, isDeleting }: ReviewCardP
   const displayName = review.user?.name || "Pengguna";
   const isOwnReview = Boolean(currentUserId && (review.user?.id === currentUserId || review.userId === currentUserId));
 
-  function relativeDate(dateStr: string) {
+  const [isHelpful, setIsHelpful] = useState<boolean>(false);
+  const initialHelpfulCount = review.helpfulCount ?? (review as any).helpful_count ?? 0;
+  const [helpfulCount, setHelpfulCount] = useState<number>(initialHelpfulCount);
+
+  const toggleHelpful = () => {
+    if (isHelpful) {
+      setIsHelpful(false);
+      setHelpfulCount((prev) => Math.max(0, prev - 1));
+    } else {
+      setIsHelpful(true);
+      setHelpfulCount((prev) => prev + 1);
+    }
+  };
+
+  function relativeDate(dateStr?: string) {
+    if (!dateStr) return "Baru saja";
     try {
       const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "Baru saja";
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
       const diffSec = Math.floor(diffMs / 1000);
@@ -1153,20 +1171,24 @@ function ReviewCard({ review, currentUserId, onDelete, isDeleting }: ReviewCardP
       if (diffHour < 24) return `${diffHour} jam lalu`;
       if (diffDay < 7) return `${diffDay} hari lalu`;
       return date.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-    } catch { return dateStr; }
+    } catch {
+      return "Baru saja";
+    }
   }
+
+  const dateValue = review.createdAt || (review as any).created_at || (review as any).createdAt;
 
   return (
     <div className="bg-slate-50/60 rounded-2xl border border-slate-200/80 p-4 sm:p-5 space-y-3 hover:border-[#008767]/30 transition-colors">
       {/* Header row */}
       <div className="flex items-start gap-3">
         {/* User avatar */}
-        <div className="w-10 h-10 rounded-full bg-[#008767] text-white flex-shrink-0 flex items-center justify-center font-bold text-sm">
+        <div className="w-10 h-10 rounded-full bg-[#008767] text-white flex-shrink-0 flex items-center justify-center font-bold text-sm shadow-xs">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-slate-900 text-sm">{displayName}</p>
-          <p className="text-[11px] text-slate-400">{relativeDate(review.createdAt)}</p>
+          <p className="text-[11px] text-slate-400">{relativeDate(dateValue)}</p>
         </div>
         {/* Rating */}
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -1190,13 +1212,23 @@ function ReviewCard({ review, currentUserId, onDelete, isDeleting }: ReviewCardP
 
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-        <div className="flex items-center gap-3">
-          {review.helpfulCount !== undefined && review.helpfulCount > 0 && (
-            <span className="flex items-center gap-1 text-[11px] text-slate-500">
-              <ThumbsUp className="w-3 h-3 text-[#008767]" />
-              {review.helpfulCount} orang merasa terbantu
-            </span>
-          )}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Helpful Button UI */}
+          <button
+            type="button"
+            onClick={toggleHelpful}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-2xs active:scale-95 cursor-pointer ${
+              isHelpful
+                ? "bg-emerald-50 text-[#008767] border-emerald-200"
+                : "bg-white text-slate-600 border-slate-200/80 hover:border-[#008767]/40 hover:text-[#008767]"
+            }`}
+            title="Tandai ulasan ini bermanfaat"
+          >
+            <ThumbsUp className={`w-3.5 h-3.5 ${isHelpful ? "fill-[#008767]" : ""}`} />
+            <span>Helpful</span>
+            {helpfulCount > 0 && <span className="font-bold">({helpfulCount})</span>}
+          </button>
+
           {review.status === "APPROVED" ? (
             <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
               Terverifikasi
@@ -1212,7 +1244,7 @@ function ReviewCard({ review, currentUserId, onDelete, isDeleting }: ReviewCardP
           <button
             onClick={() => onDelete(review.id)}
             disabled={isDeleting}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors text-xs font-medium"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors text-xs font-medium cursor-pointer"
             title="Hapus Ulasan Saya"
           >
             <Trash2 className="w-3.5 h-3.5" />
