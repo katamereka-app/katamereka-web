@@ -61,9 +61,7 @@ function WriteReviewContent() {
   const [title, setTitle] = useState<string>("");
   const [content, setContent] = useState<string>("");
   const [confirmed, setConfirmed] = useState<boolean>(true);
-  const [photos, setPhotos] = useState<string[]>([
-    "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=300&auto=format&fit=crop&q=80",
-  ]);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
