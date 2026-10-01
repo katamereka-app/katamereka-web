@@ -49,6 +49,7 @@ import { slugify, categoryDisplayName, isRealBusinessCategory } from "@/lib/slug
 interface HomeContentProps {
   initialCategoryFacets?: ApiCategoryFacet[];
   initialCityFacets?: ApiCityFacet[];
+  initialPopularBusinesses?: Business[];
 }
 
 function getCategoryIconAndColor(categoryRaw: string, index: number) {
@@ -99,11 +100,11 @@ function getCategoryIconAndColor(categoryRaw: string, index: number) {
   return presets[index % presets.length];
 }
 
-export default function LandingPage({ initialCategoryFacets, initialCityFacets }: HomeContentProps = {}) {
+export default function LandingPage({ initialCategoryFacets, initialCityFacets, initialPopularBusinesses }: HomeContentProps = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [popularBusinesses, setPopularBusinesses] = useState<Business[]>([]);
+  const [popularBusinesses, setPopularBusinesses] = useState<Business[]>(initialPopularBusinesses || []);
   const [categoryFacets, setCategoryFacets] = useState<ApiCategoryFacet[]>(initialCategoryFacets || []);
   const [cityFacets, setCityFacets] = useState<ApiCityFacet[]>(initialCityFacets || []);
 
