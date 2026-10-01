@@ -70,6 +70,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/navbar";
 import { useAuth } from "@/lib/auth-context";
+import ShareBusinessModal from "@/components/share-business-modal";
 
 export default function BusinessProfilePage() {
   const params = useParams();
@@ -82,6 +83,7 @@ export default function BusinessProfilePage() {
   const [activeTab, setActiveTab] = useState<"profil" | "review" | "foto" | "info">("profil");
   const [isSaved, setIsSaved] = useState(false);
   const [savingFavorite, setSavingFavorite] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [claimStatus, setClaimStatus] = useState<BusinessClaimStatus | null>(null);
   const [claimStatusLoading, setClaimStatusLoading] = useState(false);
@@ -420,6 +422,11 @@ export default function BusinessProfilePage() {
   const logoUrl = apiDetail?.logoUrl ?? apiDetail?.logo_url ?? null;
   const coverUrl = apiDetail?.coverUrl ?? apiDetail?.cover_url ?? null;
 
+  const shareUrl =
+    typeof window !== "undefined"
+      ? window.location.href
+      : `https://katamereka.id/business/${slug}`;
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -561,12 +568,7 @@ export default function BusinessProfilePage() {
 
                 <button
                   aria-label="Share"
-                  onClick={() => {
-                    if (navigator.clipboard) {
-                      navigator.clipboard.writeText(window.location.href);
-                      alert("Link profil berhasil disalin!");
-                    }
-                  }}
+                  onClick={() => setShareModalOpen(true)}
                   className="w-11 h-11 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-600 transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
@@ -1099,6 +1101,14 @@ export default function BusinessProfilePage() {
         onClose={() => setConfirmDeleteId(null)}
         onConfirm={() => confirmDeleteId && handleDeleteReview(confirmDeleteId)}
         isDeleting={Boolean(deletingReviewId)}
+      />
+
+      {/* Share Business Profile Modal */}
+      <ShareBusinessModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        businessName={apiDetail?.name || "-"}
+        shareUrl={shareUrl}
       />
     </div>
   );
