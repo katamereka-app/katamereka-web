@@ -112,6 +112,8 @@ export default function BusinessProfilePage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [previewPhotoModalUrl, setPreviewPhotoModalUrl] = useState<string | null>(null);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isTentangOpen, setIsTentangOpen] = useState(false);
+  const [isFasilitasOpen, setIsFasilitasOpen] = useState(false);
   const [claimStatus, setClaimStatus] = useState<BusinessClaimStatus | null>(null);
   const [claimStatusLoading, setClaimStatusLoading] = useState(false);
   const [claimModalOpen, setClaimModalOpen] = useState(false);
@@ -172,7 +174,7 @@ export default function BusinessProfilePage() {
               .then((img) => {
                 if (img) setPlaceImageUrl(img);
               })
-              .catch(() => {});
+              .catch(() => { });
           }
         } else {
           setApiDetail(null);
@@ -269,7 +271,7 @@ export default function BusinessProfilePage() {
           setBusinessReviews(data.reviews);
         }
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoadingReviews(false));
   }, [apiDetail?.id]);
 
@@ -325,11 +327,11 @@ export default function BusinessProfilePage() {
 
   const initials = apiDetail?.name
     ? apiDetail.name
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .substring(0, 2)
-        .toUpperCase()
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase()
     : "KM";
 
   // Dynamic review count from API (reviewCount, reviewsCount, reviews_count, externalReviewsCount)
@@ -363,13 +365,13 @@ export default function BusinessProfilePage() {
   const actualRating =
     businessReviews.length > 0
       ? parseFloat(
-          (
-            businessReviews.reduce((acc, r) => {
-              const rat = typeof r.rating === "number" ? r.rating : parseFloat(String(r.rating ?? 0));
-              return acc + (isNaN(rat) ? 0 : rat);
-            }, 0) / businessReviews.length
-          ).toFixed(1)
-        )
+        (
+          businessReviews.reduce((acc, r) => {
+            const rat = typeof r.rating === "number" ? r.rating : parseFloat(String(r.rating ?? 0));
+            return acc + (isNaN(rat) ? 0 : rat);
+          }, 0) / businessReviews.length
+        ).toFixed(1)
+      )
       : actualReviewCount > 0 ? ratingVal : 0;
 
   const ratingFormatted = actualRating > 0 ? actualRating.toFixed(1) : "0.0";
@@ -732,11 +734,10 @@ export default function BusinessProfilePage() {
                 type="button"
                 onClick={handleToggleSave}
                 disabled={savingFavorite}
-                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold border transition-colors ${
-                  isSaved
+                className={`inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-semibold border transition-colors ${isSaved
                     ? "bg-emerald-50 border-emerald-300 text-[#008767]"
                     : "border-slate-200 text-slate-700 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 <Bookmark
                   className={`w-4 h-4 ${isSaved ? "fill-[#008767] text-[#008767]" : "text-slate-600"}`}
@@ -753,7 +754,7 @@ export default function BusinessProfilePage() {
                         title: apiDetail?.name,
                         url: shareUrl,
                       })
-                      .catch(() => {});
+                      .catch(() => { });
                   } else if (navigator.clipboard) {
                     navigator.clipboard.writeText(shareUrl);
                     toast.success("Tautan bisnis berhasil disalin!");
@@ -768,28 +769,34 @@ export default function BusinessProfilePage() {
           </div>
 
           {/* Integrated Bottom Tabs */}
-          <div className="mt-6 pt-2 border-t border-slate-100 flex items-center gap-6 sm:gap-8 overflow-x-auto no-scrollbar">
-            {[
-              { id: "profil", label: "Profil" },
-              { id: "review", label: `Review (${actualReviewCount})` },
-              { id: "foto", label: "Foto" },
-              { id: "info", label: "Info" },
-            ].map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`py-2.5 text-xs sm:text-sm font-bold transition-all whitespace-nowrap relative ${
-                    isActive
-                      ? "text-[#008767] border-b-2 border-[#008767]"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              );
-            })}
+          <div className="mt-6 border-t border-slate-100 pt-2 -mb-2 sm:-mb-3">
+            <nav className="flex items-center justify-between sm:justify-start sm:gap-8 w-full">
+              {[
+                { id: "profil", label: "Profil" },
+                { id: "review", label: `Review (${actualReviewCount})` },
+                { id: "foto", label: "Foto" },
+                { id: "info", label: "Info" },
+              ].map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`relative py-3 sm:py-2.5 px-2 sm:px-1 flex-1 sm:flex-initial text-center text-xs sm:text-sm font-bold transition-all cursor-pointer select-none ${
+                      isActive
+                        ? "text-[#008767]"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    <span className="block">{tab.label}</span>
+                    {isActive && (
+                      <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 sm:w-full h-[2.5px] bg-[#008767] rounded-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
           </div>
         </div>
       </section>
@@ -797,44 +804,87 @@ export default function BusinessProfilePage() {
       {/* ================= MAIN CONTENT (LEFT COLUMN + RIGHT SIDEBAR) ================= */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
+
           {/* ================= LEFT COLUMN ================= */}
           <div className="lg:col-span-8 space-y-6">
-            
+
             {/* TAB PROFIL */}
             {activeTab === "profil" && (
               <>
-                {/* Card 1: Tentang Bisnis */}
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-3">
-                  <h3 className="font-bold text-slate-900 text-base sm:text-lg">
-                    Tentang {apiDetail?.name || "Bisnis Ini"}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    {apiDetail?.description && apiDetail.description.trim() !== "" && apiDetail.description !== "-"
-                      ? apiDetail.description
-                      : "-"}
-                  </p>
+                {/* Card 1: Tentang Bisnis (Collapsible Dropdown Accordion) */}
+                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden transition-all">
+                  <button
+                    type="button"
+                    onClick={() => setIsTentangOpen(!isTentangOpen)}
+                    className="w-full p-5 sm:p-6 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+                  >
+                    <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                      Tentang {apiDetail?.name || "Bisnis Ini"}
+                    </h3>
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 transition-transform flex-shrink-0">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-300 ${
+                          isTentangOpen ? "rotate-180 text-[#008767]" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {isTentangOpen && (
+                    <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-1 border-t border-slate-100 animate-in fade-in duration-200">
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mt-2">
+                        {apiDetail?.description && apiDetail.description.trim() !== "" && apiDetail.description !== "-"
+                          ? apiDetail.description
+                          : "-"}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Card 2: Fasilitas */}
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-6 sm:p-7 shadow-xs space-y-4">
-                  <h3 className="font-bold text-slate-900 text-base sm:text-lg">
-                    Fasilitas
-                  </h3>
-                  {facilitiesList.length > 0 ? (
-                    <div className="flex flex-wrap gap-2.5">
-                      {facilitiesList.map((item, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50/60 border border-emerald-100 text-slate-700 text-xs sm:text-sm font-medium"
-                        >
-                          {renderFacilityIcon(item)}
-                          <span>{item}</span>
+                {/* Card 2: Fasilitas (Collapsible Dropdown Accordion) */}
+                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden transition-all">
+                  <button
+                    type="button"
+                    onClick={() => setIsFasilitasOpen(!isFasilitasOpen)}
+                    className="w-full p-5 sm:p-6 flex items-center justify-between text-left hover:bg-slate-50/70 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+                        Fasilitas
+                      </h3>
+                      {facilitiesList.length > 0 && (
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-[#008767] border border-emerald-100">
+                          {facilitiesList.length}
                         </span>
-                      ))}
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-slate-500 text-sm font-medium">-</p>
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 transition-transform flex-shrink-0">
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform duration-300 ${
+                          isFasilitasOpen ? "rotate-180 text-[#008767]" : ""
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {isFasilitasOpen && (
+                    <div className="px-5 sm:px-6 pb-5 sm:pb-6 pt-1 border-t border-slate-100 animate-in fade-in duration-200">
+                      {facilitiesList.length > 0 ? (
+                        <div className="flex flex-wrap gap-2.5 mt-2">
+                          {facilitiesList.map((item, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50/60 border border-emerald-100 text-slate-700 text-xs sm:text-sm font-medium"
+                            >
+                              {renderFacilityIcon(item)}
+                              <span>{item}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-slate-500 text-sm font-medium mt-2">-</p>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -1112,7 +1162,7 @@ export default function BusinessProfilePage() {
 
           {/* ================= RIGHT SIDEBAR ================= */}
           <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
-            
+
             {/* CARD 1: Rating & Ulasan */}
             <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-3">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-sm sm:text-base">
@@ -1236,11 +1286,10 @@ export default function BusinessProfilePage() {
                       return (
                         <div
                           key={day.name}
-                          className={`flex items-center justify-between py-1 px-2 rounded-lg transition-colors ${
-                            isToday
+                          className={`flex items-center justify-between py-1 px-2 rounded-lg transition-colors ${isToday
                               ? "bg-emerald-50/70 font-bold text-slate-900"
                               : "text-slate-600"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2">
                             <span>{day.name}</span>
@@ -1601,11 +1650,10 @@ function ReviewCard({ review, currentUserId, onDelete, isDeleting }: ReviewCardP
           <button
             type="button"
             onClick={toggleHelpful}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-2xs active:scale-95 cursor-pointer ${
-              isHelpful
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-2xs active:scale-95 cursor-pointer ${isHelpful
                 ? "bg-emerald-50 text-[#008767] border-emerald-200"
                 : "bg-white text-slate-600 border-slate-200/80 hover:border-[#008767]/40 hover:text-[#008767]"
-            }`}
+              }`}
             title="Tandai ulasan ini bermanfaat"
           >
             <ThumbsUp className={`w-3.5 h-3.5 ${isHelpful ? "fill-[#008767]" : ""}`} />
