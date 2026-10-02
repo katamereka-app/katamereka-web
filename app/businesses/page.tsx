@@ -70,16 +70,34 @@ export default function BusinessesPage() {
 
   const categories = fetchedCategories.length > 0 ? fetchedCategories : defaultCategories;
 
-  // Filter Locations
-  const locations = [
-    "Semua Lokasi",
-    "Jakarta",
-    "Bandung",
-    "Surabaya",
-    "Yogyakarta",
-    "Medan",
-    "Makassar"
-  ];
+  // Dynamic Locations extracted from loaded businesses and popular cities
+  const locations = useMemo(() => {
+    const fromData = apiBusinesses
+      .map((b) => b.location)
+      .filter((l): l is string => Boolean(l && l !== "-" && l.trim() !== ""))
+      .map((l) => {
+        const parts = l.split(",").map((p) => p.trim());
+        return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      })
+      .filter((v, i, a) => v && a.indexOf(v) === i);
+
+    const baseCities = [
+      "Jakarta",
+      "Bandung",
+      "Surabaya",
+      "Yogyakarta",
+      "Medan",
+      "Makassar",
+      "Palembang",
+      "Banyuwangi",
+      "Bali",
+      "Semarang",
+      "Malang"
+    ];
+
+    const uniqueLocs = Array.from(new Set([...fromData, ...baseCities]));
+    return ["Semua Lokasi", ...uniqueLocs];
+  }, [apiBusinesses]);
 
   // Filter Ratings
   const ratings = [
@@ -436,39 +454,49 @@ export default function BusinessesPage() {
                   Menampilkan <span className="font-bold text-slate-900">{filteredBusinesses.length}</span> bisnis
                 </p>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2.5">
                   {/* Category Filter Dropdown */}
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <span className="font-medium text-slate-500">Kategori:</span>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => {
-                        setSelectedCategory(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
-                    >
-                      {categories.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => {
+                      setSelectedCategory(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
+                  >
+                    {categories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Location Filter Dropdown */}
+                  <select
+                    value={selectedLocation}
+                    onChange={(e) => {
+                      setSelectedLocation(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
+                  >
+                    {locations.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
+                  </select>
 
                   {/* Sort Dropdown */}
-                  <div className="flex items-center gap-2 text-xs text-slate-600">
-                    <span className="font-medium text-slate-500">Urutkan:</span>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
-                    >
-                      <option value="Terpopuler">Terpopuler</option>
-                      <option value="Rating Tertinggi">Rating Tertinggi</option>
-                      <option value="Ulasan Terbanyak">Ulasan Terbanyak</option>
-                    </select>
-                  </div>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-[#008767] cursor-pointer"
+                  >
+                    <option value="Terpopuler">Terpopuler</option>
+                    <option value="Rating Tertinggi">Rating Tertinggi</option>
+                    <option value="Ulasan Terbanyak">Ulasan Terbanyak</option>
+                  </select>
                 </div>
               </div>
 

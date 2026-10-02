@@ -11,6 +11,7 @@
  */
 
 import { Business, businesses as mockBusinesses } from "./mock-data";
+import { businesses as mockBusinessList } from "./mock/businesses";
 import { categories as mockCategories } from "./mock/categories";
 import { cities as mockCities } from "./mock/cities";
 
@@ -346,16 +347,69 @@ export async function fetchBusinesses(
       return data;
     }
   } catch (e) {
-    console.warn("fetchBusinesses API call failed:", e);
+    console.warn("fetchBusinesses API call failed, using mock fallback:", e);
   }
 
+  // Graceful fallback to rich mock data if live API fails or returns 500
+  let filtered = [...mockBusinessList].map((b) => ({
+    id: b.id,
+    name: b.name,
+    slug: b.slug,
+    address: b.address || "-",
+    city: b.city || "-",
+    province: b.province || "-",
+    category: b.category,
+    rating: b.averageRating || 0,
+    reviews_count: b.totalReviews || 0,
+    status: b.status || "ACTIVE",
+    cover_url: null,
+    logo_url: null,
+    photos: [],
+    updated_at: b.createdAt,
+  }));
+
+  if (params.search) {
+    const q = params.search.toLowerCase();
+    filtered = filtered.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        (b.category && b.category.toLowerCase().includes(q)) ||
+        b.city.toLowerCase().includes(q)
+    );
+  }
+
+  if (params.category && params.category !== "Semua Kategori") {
+    const cat = params.category.toLowerCase();
+    filtered = filtered.filter(
+      (b) => b.category && b.category.toLowerCase().includes(cat)
+    );
+  }
+
+  if (params.city && params.city !== "Semua Lokasi") {
+    const loc = params.city.toLowerCase();
+    filtered = filtered.filter(
+      (b) => b.city.toLowerCase().includes(loc) || b.province.toLowerCase().includes(loc)
+    );
+  }
+
+  if (params.sort === "rating") {
+    filtered.sort((a, b) => Number(b.rating) - Number(a.rating));
+  } else if (params.sort === "reviews") {
+    filtered.sort((a, b) => b.reviews_count - a.reviews_count);
+  }
+
+  const page = params.page || 1;
+  const limit = params.limit || 12;
+  const start = (page - 1) * limit;
+  const paged = filtered.slice(start, start + limit);
+
   return {
-    data: [],
+    data: paged,
     pagination: {
-      page: params.page || 1,
-      limit: params.limit || 20,
-      total: 0,
-      total_pages: 1,
+      page,
+      limit,
+      total: filtered.length,
+      total_pages: Math.max(1, Math.ceil(filtered.length / limit)),
     },
   };
 }
