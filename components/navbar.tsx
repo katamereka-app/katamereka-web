@@ -250,6 +250,15 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
               </div>
 
               <Link
+                href="/blogs"
+                className={`transition-colors hover:text-[#008767] ${
+                  isActive("/blogs") ? "text-[#008767] font-bold" : ""
+                }`}
+              >
+                Blog
+              </Link>
+
+              <Link
                 href="/tentang-kami"
                 className={`transition-colors hover:text-[#008767] ${
                   isActive("/tentang-kami") ? "text-[#008767] font-bold" : ""
@@ -586,6 +595,17 @@ export default function Navbar({ isBusinessPage: forceBusinessView }: NavbarProp
                       className="block py-2.5 px-4 rounded-xl text-base font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
                     >
                       Kategori
+                    </Link>
+                    <Link
+                      href="/blogs"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block py-2.5 px-4 rounded-xl text-base font-semibold transition-colors ${
+                        isActive("/blogs")
+                          ? "bg-emerald-50 text-[#008767] font-bold"
+                          : "text-slate-800 hover:bg-slate-50"
+                      }`}
+                    >
+                      Blog
                     </Link>
                     <Link
                       href="/tentang-kami"
