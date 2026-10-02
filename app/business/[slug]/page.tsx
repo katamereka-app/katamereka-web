@@ -800,7 +800,7 @@ export default function BusinessProfilePage() {
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                     {apiDetail?.description && apiDetail.description.trim() !== "" && apiDetail.description !== "-"
                       ? apiDetail.description
-                      : `${apiDetail?.name || "Bisnis ini"} merupakan usaha di bidang ${formattedCategory} yang berlokasi di ${locationStr !== "-" ? locationStr : "Indonesia"}. Dengan lokasi yang strategis dan pelayanan yang ramah, cocok untuk berbagai kebutuhan Anda.`}
+                      : "-"}
                   </p>
                 </div>
 
