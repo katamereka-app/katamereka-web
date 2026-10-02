@@ -221,14 +221,10 @@ export default function CategoryClient({
               className="group bg-white rounded-2xl border border-slate-200/80 p-5 hover:shadow-xl hover:border-[#008767]/30 transition-all flex flex-col justify-between"
             >
               <div className="space-y-3">
-                {/* Card Top: Initials & Verified Badge */}
+                {/* Card Top: Initials */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#008767] border border-emerald-100 font-extrabold text-sm flex items-center justify-center shrink-0">
                     {biz.initials || biz.name.charAt(0)}
-                  </div>
-                  <div className="bg-emerald-50 text-[#008767] px-2.5 py-1 rounded-full text-[11px] font-semibold border border-emerald-200/60 flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Terverifikasi</span>
                   </div>
                 </div>
 

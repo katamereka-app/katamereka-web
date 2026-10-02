@@ -518,34 +518,6 @@ export default function BusinessesPage() {
                               <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
                             )}
 
-                            {/* Verified Badge Overlay */}
-                            <div className="z-10">
-                              {biz.badge === "Terverifikasi" && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs">
-                                  <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                                  <span>Terverifikasi</span>
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Save Button */}
-                            <button
-                              onClick={(e) => handleToggleFavorite(biz.id, e)}
-                              disabled={togglingFavId === biz.id}
-                              aria-label="Favorit"
-                              title={isFav ? "Hapus dari favorit" : "Tambah ke favorit"}
-                              className={`w-8 h-8 rounded-full border flex items-center justify-center shadow-2xs transition-all z-10 disabled:opacity-50 ${
-                                isFav
-                                  ? "bg-[#e8f6f2] border-[#008767]/30 text-[#008767]"
-                                  : "bg-white/90 backdrop-blur-xs border-slate-200 text-slate-400 hover:border-[#008767]/40 hover:text-[#008767]"
-                              }`}
-                            >
-                              <Bookmark
-                                className={`w-4 h-4 ${
-                                  isFav ? "fill-[#008767]" : ""
-                                }`}
-                              />
-                            </button>
                           </div>
 
                           {/* Content Body */}
@@ -557,14 +529,35 @@ export default function BusinessesPage() {
                               {biz.initials}
                             </div>
 
-                            {/* Title & Info */}
-                            <div>
-                              <h3 className="font-bold text-slate-900 text-base group-hover:text-[#008767] transition-colors line-clamp-1">
-                                {biz.name}
-                              </h3>
-                              <p className="text-xs text-slate-500 mt-0.5 font-medium">
-                                {biz.category} • {biz.location}
-                              </p>
+                            {/* Title, Info & Love Button */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-bold text-slate-900 text-base group-hover:text-[#008767] transition-colors line-clamp-1">
+                                  {biz.name}
+                                </h3>
+                                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                                  {biz.category} • {biz.location}
+                                </p>
+                              </div>
+
+                              {/* Love Button beside business name */}
+                              <button
+                                onClick={(e) => handleToggleFavorite(biz.id, e)}
+                                disabled={togglingFavId === biz.id}
+                                aria-label="Favorit"
+                                title={isFav ? "Hapus dari favorit" : "Tambah ke favorit"}
+                                className={`p-1.5 -mr-1 -mt-1 rounded-full transition-all flex-shrink-0 cursor-pointer ${
+                                  isFav
+                                    ? "text-rose-500 bg-rose-50 hover:bg-rose-100"
+                                    : "text-slate-400 hover:text-rose-500 hover:bg-rose-50/60"
+                                }`}
+                              >
+                                <Heart
+                                  className={`w-4 h-4 ${
+                                    isFav ? "fill-rose-500 text-rose-500" : ""
+                                  }`}
+                                />
+                              </button>
                             </div>
 
                             {/* Rating */}
