@@ -895,9 +895,18 @@ export default function BusinessProfilePage() {
                       <h3 className="font-bold text-slate-900 text-base sm:text-lg">
                         Ulasan Pelanggan
                       </h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        {reviewCountFormatted}
-                      </p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 flex-shrink-0" />
+                          <span className="text-xs font-bold text-slate-800">
+                            {actualReviewCount > 0 && actualRating > 0 ? ratingFormatted : "-"}
+                          </span>
+                        </div>
+                        <span className="text-slate-300 text-xs">•</span>
+                        <p className="text-xs text-slate-500">
+                          {reviewCountFormatted}
+                        </p>
+                      </div>
                     </div>
                     {businessReviews.length > 0 && (
                       <button
@@ -969,7 +978,16 @@ export default function BusinessProfilePage() {
                     <h3 className="font-bold text-slate-900 text-lg sm:text-xl">
                       Semua Ulasan Pelanggan
                     </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">{reviewCountFormatted}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 flex-shrink-0" />
+                        <span className="text-xs font-bold text-slate-800">
+                          {actualReviewCount > 0 && actualRating > 0 ? ratingFormatted : "-"}
+                        </span>
+                      </div>
+                      <span className="text-slate-300 text-xs">•</span>
+                      <p className="text-xs text-slate-500">{reviewCountFormatted}</p>
+                    </div>
                   </div>
                   <Link
                     href={`/review?business=${slug}`}
@@ -1163,8 +1181,8 @@ export default function BusinessProfilePage() {
           {/* ================= RIGHT SIDEBAR ================= */}
           <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
 
-            {/* CARD 1: Rating & Ulasan */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-3">
+            {/* CARD 1: Rating & Ulasan (Hidden on mobile) */}
+            <div className="hidden lg:block bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-3">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-sm sm:text-base">
                 <MessageSquare className="w-4 h-4 text-[#008767]" />
                 <span>Rating & Ulasan</span>
