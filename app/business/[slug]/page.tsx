@@ -692,16 +692,28 @@ export default function BusinessProfilePage() {
                   <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 fill-[#008767] text-white flex-shrink-0" />
                 </div>
 
-                {/* Location with Pin */}
+                {/* Location with Pin (Clickable to Google Maps) */}
                 <div className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 min-w-0">
                   <img
                     src="/icons/header-location.png"
                     alt="Lokasi bisnis"
                     className="w-4 h-4 object-contain flex-shrink-0"
                   />
-                  <span className="truncate max-w-sm sm:max-w-md md:max-w-lg">
-                    {fullAddress !== "-" ? fullAddress : (locationStr !== "-" ? locationStr : "Indonesia")}
-                  </span>
+                  {fullAddress !== "-" || locationStr !== "-" ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${apiDetail?.name ? `${apiDetail.name}, ` : ""}${fullAddress !== "-" ? fullAddress : locationStr}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate max-w-sm sm:max-w-md md:max-w-lg font-medium text-slate-600 hover:text-[#008767] hover:underline cursor-pointer"
+                      title="Buka lokasi di Google Maps"
+                    >
+                      {fullAddress !== "-" ? fullAddress : (locationStr !== "-" ? locationStr : "Indonesia")}
+                    </a>
+                  ) : (
+                    <span className="truncate max-w-sm sm:max-w-md md:max-w-lg">Indonesia</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1031,7 +1043,21 @@ export default function BusinessProfilePage() {
                       />
                       <div>
                         <p className="font-bold text-slate-900">Alamat Lengkap:</p>
-                        <p className="text-slate-600 mt-0.5">{addressStr}</p>
+                        {addressStr !== "-" ? (
+                          <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                              `${apiDetail?.name ? `${apiDetail.name}, ` : ""}${fullAddress !== "-" ? fullAddress : addressStr}`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-600 hover:text-[#008767] hover:underline mt-0.5 inline-block cursor-pointer"
+                            title="Buka lokasi di Google Maps"
+                          >
+                            {addressStr}
+                          </a>
+                        ) : (
+                          <p className="text-slate-600 mt-0.5">-</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1154,16 +1180,28 @@ export default function BusinessProfilePage() {
                   )}
                 </div>
 
-                {/* Address */}
+                {/* Address (Clickable Google Maps link) */}
                 <div className="flex items-start gap-3 text-slate-700 min-w-0">
                   <img
                     src="/icons/header-location.png"
                     alt="Alamat"
                     className="w-4 h-4 object-contain flex-shrink-0 mt-0.5"
                   />
-                  <span className="leading-snug text-slate-600">
-                    {fullAddress !== "-" ? fullAddress : (locationStr !== "-" ? locationStr : "-")}
-                  </span>
+                  {fullAddress !== "-" || locationStr !== "-" ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${apiDetail?.name ? `${apiDetail.name}, ` : ""}${fullAddress !== "-" ? fullAddress : locationStr}`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="leading-snug font-medium text-slate-800 hover:text-[#008767] hover:underline cursor-pointer"
+                      title="Buka lokasi di Google Maps"
+                    >
+                      {fullAddress !== "-" ? fullAddress : (locationStr !== "-" ? locationStr : "-")}
+                    </a>
+                  ) : (
+                    <span className="text-slate-400 font-medium">-</span>
+                  )}
                 </div>
               </div>
             </div>
